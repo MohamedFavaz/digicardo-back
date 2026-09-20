@@ -1,0 +1,54 @@
+/vendor
+/.phpunit.cache
+/node_modules
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+.env.backup
+.env.production
+
+# SQLite database
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+/database/*.sqlite
+/database/*.sqlite-journal
+
+# Logs
+npm-debug.log
+yarn-error.log
+
+# Storage
+/storage/*.key
+/storage/app/public/*
+/storage/app/private/*
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/framework/testing/*
+/storage/logs/*
+
+!/storage/app/public/.gitignore
+!/storage/app/private/.gitignore
+!/storage/framework/cache/data/.gitignore
+!/storage/framework/sessions/.gitignore
+!/storage/framework/views/.gitignore
+!/storage/logs/.gitignore
+
+# Public generated files
+/public/storage
+/public/hot
+
+# System & IDE files
+.DS_Store
+Thumbs.db
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
