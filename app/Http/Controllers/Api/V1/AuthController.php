@@ -22,14 +22,23 @@ class AuthController extends Controller
     }
 
     /**
-     * Handle user registration (Public registration disabled in Phase 15).
+     * Handle user registration.
      */
-    public function register(Request $request): JsonResponse
+    public function register(RegisterRequest $request): JsonResponse
     {
-        return $this->errorResponse(
-            'PUBLIC_REGISTRATION_DISABLED',
-            'Public registration is disabled. Digicardo accounts are provisioned exclusively by platform administrators.',
-            Response::HTTP_FORBIDDEN
+        if (env('ALLOW_PUBLIC_REGISTRATION', true) === false) {
+            return $this->errorResponse(
+                'PUBLIC_REGISTRATION_DISABLED',
+                'Public registration is disabled. Digicardo accounts are provisioned exclusively by platform administrators.',
+                Response::HTTP_FORBIDDEN
+            );
+        }
+
+        $user = $this->authService->register($request->validated());
+
+        return $this->successResponse(
+            new UserResource($user),
+            ['message' => 'Registration successful.']
         );
     }
 
