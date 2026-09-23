@@ -197,6 +197,14 @@ class ProfileService
 
             if (isset($data['theme_tokens'])) {
                 $lockedProfile->theme_tokens = $data['theme_tokens'];
+
+                // Synchronize custom avatar URL with the main profile avatar_url
+                $customOpts = $data['theme_tokens']['custom_options'] ?? [];
+                if (!empty($customOpts['profile_image_url'])) {
+                    $lockedProfile->avatar_url = $customOpts['profile_image_url'];
+                } elseif (!empty($customOpts['custom_avatar_url'])) {
+                    $lockedProfile->avatar_url = $customOpts['custom_avatar_url'];
+                }
             }
 
             $lockedProfile->version = ((int) $lockedProfile->version) + 1;

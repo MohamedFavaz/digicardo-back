@@ -103,15 +103,10 @@ class ProfileController extends Controller
     {
         $data = $request->validated();
 
-        // Merge the raw custom_options from input into the validated data.
-        // Laravel's validated() only returns explicitly-ruled keys, so nested
-        // arrays inside custom_options (products, banner_images, social_urls, etc.)
-        // would be stripped if we rely solely on validated(). We preserve the full
-        // custom_options blob here — the Zod schema on the frontend already enforced
-        // structural correctness before submission.
-        $rawCustomOptions = $request->input('theme_tokens.custom_options');
-        if (isset($data['theme_tokens']) && is_array($data['theme_tokens']) && $rawCustomOptions !== null) {
-            $data['theme_tokens']['custom_options'] = is_array($rawCustomOptions) ? $rawCustomOptions : [];
+        // Ensure the entire theme_tokens object (including arbitrary nested custom_options)
+        // is preserved in full rather than only keys explicitly declared in validation rules.
+        if ($request->has('theme_tokens')) {
+            $data['theme_tokens'] = $request->input('theme_tokens');
         }
 
         $profile = $this->profileService->updateAppearanceForUser(
