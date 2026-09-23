@@ -34,9 +34,14 @@ class MediaController extends Controller
             $request->file('image')
         );
 
+        $freshProfile = $request->user()->fresh()?->profile;
+
         return $this->successResponse(
             new MediaResource($media),
-            ['message' => 'Profile avatar uploaded successfully.'],
+            [
+                'message' => 'Profile avatar uploaded successfully.',
+                'profile_version' => $freshProfile ? (int) $freshProfile->version : null,
+            ],
             Response::HTTP_CREATED
         );
     }
@@ -47,10 +52,14 @@ class MediaController extends Controller
     public function deleteAvatar(Request $request): JsonResponse
     {
         $this->mediaService->deleteAvatar($request->user());
+        $freshProfile = $request->user()->fresh()?->profile;
 
         return $this->successResponse(
             null,
-            ['message' => 'Profile avatar removed successfully.']
+            [
+                'message' => 'Profile avatar removed successfully.',
+                'profile_version' => $freshProfile ? (int) $freshProfile->version : null,
+            ]
         );
     }
 
@@ -64,9 +73,14 @@ class MediaController extends Controller
             $request->file('image')
         );
 
+        $freshProfile = $request->user()->fresh()?->profile;
+
         return $this->successResponse(
             new MediaResource($media),
-            ['message' => 'Profile cover image uploaded successfully.'],
+            [
+                'message' => 'Profile cover image uploaded successfully.',
+                'profile_version' => $freshProfile ? (int) $freshProfile->version : null,
+            ],
             Response::HTTP_CREATED
         );
     }
@@ -77,10 +91,14 @@ class MediaController extends Controller
     public function deleteCover(Request $request): JsonResponse
     {
         $this->mediaService->deleteCover($request->user());
+        $freshProfile = $request->user()->fresh()?->profile;
 
         return $this->successResponse(
             null,
-            ['message' => 'Profile cover image removed successfully.']
+            [
+                'message' => 'Profile cover image removed successfully.',
+                'profile_version' => $freshProfile ? (int) $freshProfile->version : null,
+            ]
         );
     }
 
