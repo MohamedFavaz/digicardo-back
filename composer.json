@@ -1,5 +1,5 @@
 {
-    "name": "Digicardo/backend",
+    "name": "digicardo/backend",
     "type": "project",
     "description": "Digicardo SaaS Backend API — Laravel 13 Foundation",
     "keywords": [
