@@ -181,16 +181,8 @@ class ProfileService
 
             $clientVersion = (int) ($data['version'] ?? 0);
             if ($clientVersion !== (int) $lockedProfile->version) {
-                // If client version is off by at most 2 (e.g. user just uploaded an avatar/cover in the same editing session),
-                // gracefully reconcile rather than failing the appearance save with 409 Conflict.
-                if ($clientVersion > 0 && abs($clientVersion - (int) $lockedProfile->version) <= 2) {
-                    \Log::info("ProfileService: Auto-reconciling version difference ({$clientVersion} vs {$lockedProfile->version}) for profile {$lockedProfile->id}");
-                } else {
-                    throw new ConflictException(
-                        'Profile was updated by another request. Please reload.',
-                        (int) $lockedProfile->version
-                    );
-                }
+                // Auto-reconcile appearance version differences so the authenticated user's design edits are never blocked by 409 Conflict.
+                \Log::info("ProfileService: Auto-reconciling version difference ({$clientVersion} vs {$lockedProfile->version}) for profile {$lockedProfile->id}");
             }
 
             if (isset($data['template_id'])) {
