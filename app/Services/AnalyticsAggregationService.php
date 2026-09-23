@@ -170,6 +170,27 @@ class AnalyticsAggregationService
             }
         }
 
+        // Raw fallback reconciliation to ensure views & clicks are never lost
+        $rawViews = (int) AnalyticsEvent::where('profile_id', $profile->id)
+            ->where('event_type', AnalyticsEventType::ProfileView->value)
+            ->whereBetween('occurred_at', [$start, $end])
+            ->count();
+        if ($rawViews > $totalViews) {
+            $totalViews = $rawViews;
+            $uniqueCount = (int) AnalyticsUniqueVisitor::where('profile_id', $profile->id)
+                ->whereBetween('date', [$startDateStr, $endDateStr])
+                ->count();
+            $uniqueViews = max($uniqueViews, $uniqueCount > 0 ? $uniqueCount : $rawViews);
+        }
+
+        $rawClicks = (int) AnalyticsEvent::where('profile_id', $profile->id)
+            ->whereIn('event_type', $clickEvents)
+            ->whereBetween('occurred_at', [$start, $end])
+            ->count();
+        if ($rawClicks > $totalClicks) {
+            $totalClicks = $rawClicks;
+        }
+
         // Contact submissions count
         $contactCount = ContactSubmission::where('profile_id', $profile->id)
             ->whereBetween('created_at', [$start, $end])

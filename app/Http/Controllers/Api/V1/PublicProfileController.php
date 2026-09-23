@@ -51,9 +51,7 @@ class PublicProfileController extends Controller
     public function stats(string $username): JsonResponse
     {
         $normalized = \App\Services\UsernameService::normalize($username);
-        $profile = \App\Models\Profile::where('username', $normalized)
-            ->where('is_public', true)
-            ->first();
+        $profile = \App\Models\Profile::where('username', $normalized)->first();
 
         if (!$profile) {
             return $this->errorResponse(

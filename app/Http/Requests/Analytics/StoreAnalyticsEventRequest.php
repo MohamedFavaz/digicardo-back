@@ -19,9 +19,9 @@ class StoreAnalyticsEventRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'profile_id' => ['required', 'string', 'size:26'],
+            'profile_id' => ['required', 'string', 'max:36'],
             'event_type' => ['required', 'string', Rule::in(AnalyticsEventType::values())],
-            'block_id' => ['nullable', 'string', 'size:26'],
+            'block_id' => ['nullable', 'string', 'max:50'],
             'referrer' => ['nullable', 'string', 'max:500'],
             'metadata' => ['nullable', 'array'],
             'metadata.destination_host' => ['nullable', 'string', 'max:100'],

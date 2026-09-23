@@ -12,7 +12,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Str;
 
-class ProcessAnalyticsEvent implements ShouldQueue
+class ProcessAnalyticsEvent
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -50,5 +50,8 @@ class ProcessAnalyticsEvent implements ShouldQueue
 
         // Aggregate into daily metric rollup
         $aggregationService->aggregateEvent($event, $this->visitorHash);
+
+        // Immediately invalidate public stats cache so real-time counters reflect changes
+        \Illuminate\Support\Facades\Cache::forget("profile_public_stats:{$this->eventData['profile_id']}");
     }
 }

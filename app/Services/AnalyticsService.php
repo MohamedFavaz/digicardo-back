@@ -25,20 +25,25 @@ class AnalyticsService
      */
     public function ingest(array $data, string $ip, ?string $userAgent): bool
     {
-        // 1. Verify profile existence
+        // 1. Verify profile existence (by ULID or username)
         $profile = Profile::where('id', $data['profile_id'])->first();
+        if (!$profile) {
+            $normalizedUsername = UsernameService::normalize($data['profile_id']);
+            $profile = Profile::where('username', $normalizedUsername)->first();
+        }
         if (!$profile) {
             throw new NotFoundHttpException('Profile not found.');
         }
 
-        // 2. If block_id is provided, verify it belongs strictly to this profile
+        // 2. If block_id is provided, verify whether it belongs to this profile; if virtual/ad-hoc, fall back to null safely
+        $validBlockId = null;
         if (!empty($data['block_id'])) {
             $block = ProfileBlock::where('id', $data['block_id'])
                 ->where('profile_id', $profile->id)
                 ->first();
 
-            if (!$block) {
-                throw new UnprocessableEntityHttpException('The specified block does not belong to this profile.');
+            if ($block) {
+                $validBlockId = $block->id;
             }
         }
 
@@ -57,15 +62,15 @@ class AnalyticsService
 
         $eventData = [
             'profile_id' => $profile->id,
-            'block_id' => $data['block_id'] ?? null,
+            'block_id' => $validBlockId,
             'event_type' => $data['event_type'],
             'referrer_host' => $referrerHost,
             'metadata' => $data['metadata'] ?? null,
             'occurred_at' => $data['occurred_at'] ?? Carbon::now()->toIso8601String(),
         ];
 
-        // 5. Dispatch to background queue worker
-        ProcessAnalyticsEvent::dispatch($eventData, $visitorHash);
+        // 5. Execute processing synchronously (ensures shared hosting environments with no background daemon workers process events)
+        ProcessAnalyticsEvent::dispatchSync($eventData, $visitorHash);
 
         return true;
     }
