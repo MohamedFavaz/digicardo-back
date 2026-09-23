@@ -24,6 +24,10 @@ return [
             'http://127.0.0.1:3000',
             'https://digicardo.in',
             'https://www.digicardo.in',
+            // Vercel production frontend
+            'https://digicardo-front-phi.vercel.app',
+            // Hostinger backend self-origin (for internal requests)
+            'https://lightslategray-snake-169437.hostingersite.com',
         ],
         env('CORS_ALLOWED_ORIGINS') ? explode(',', env('CORS_ALLOWED_ORIGINS')) : []
     )))),

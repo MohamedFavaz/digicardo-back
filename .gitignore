@@ -9,6 +9,7 @@
 !.env.example
 .env.backup
 .env.production
+create_admin.php
 
 # SQLite database
 *.sqlite

@@ -33,6 +33,16 @@ class FeatureEntitlementService
     ) {}
 
     /**
+     * Public API for the EntitlementController — delegates to buildEntitlementsPayload().
+     *
+     * @return array<string, mixed>
+     */
+    public function getEntitlements(User $user): array
+    {
+        return $this->buildEntitlementsPayload($user);
+    }
+
+    /**
      * Resolve the active Plan model for a user.
      * If user has an active paid subscription, returns that plan; otherwise resolves to the Free plan.
      */

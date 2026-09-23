@@ -16,7 +16,7 @@ return [
 
     'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
         '%s%s',
-        'localhost,localhost:3000,127.0.0.1,127.0.0.1:3000,::1,digicardo.in,www.digicardo.in',
+        'localhost,localhost:3000,127.0.0.1,127.0.0.1:3000,::1,digicardo.in,www.digicardo.in,digicardo-front-phi.vercel.app,lightslategray-snake-169437.hostingersite.com',
         Sanctum::currentApplicationUrlWithPort()
     ))),
 
