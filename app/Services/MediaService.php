@@ -20,7 +20,7 @@ class MediaService
     public function __construct(
         protected PublicProfileCacheService $cacheService = new PublicProfileCacheService()
     ) {
-        $this->disk = config('filesystems.default', 'public');
+        $this->disk = config('filesystems.media_disk', env('MEDIA_DISK', 'public'));
     }
 
     /**
