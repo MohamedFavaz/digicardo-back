@@ -268,7 +268,9 @@ Route::prefix('v1')->group(function () {
 
             // ── Validity Plans (Settings > Plan Prices) ───────────────────────────────
             Route::get('/validity-plans', [\App\Http\Controllers\Api\V1\Admin\AdminValidityPlanController::class, 'index'])->name('api.v1.admin.validity-plans.index');
+            Route::post('/validity-plans', [\App\Http\Controllers\Api\V1\Admin\AdminValidityPlanController::class, 'store'])->name('api.v1.admin.validity-plans.store');
             Route::patch('/validity-plans/{id}', [\App\Http\Controllers\Api\V1\Admin\AdminValidityPlanController::class, 'update'])->name('api.v1.admin.validity-plans.update');
+            Route::delete('/validity-plans/{id}', [\App\Http\Controllers\Api\V1\Admin\AdminValidityPlanController::class, 'destroy'])->name('api.v1.admin.validity-plans.destroy');
 
             // ── Sales & Revenue (Accounts Menu) ───────────────────────────────────────
             Route::get('/sales/overview', [\App\Http\Controllers\Api\V1\Admin\AdminSalesController::class, 'overview'])->name('api.v1.admin.sales.overview');

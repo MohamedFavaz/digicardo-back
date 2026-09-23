@@ -33,11 +33,37 @@ class AdminValidityPlanController extends Controller
         return $this->successResponse(['plans' => $plans]);
     }
 
-    /** Update plan price and currency. */
+    /** Create a new validity plan. */
+    public function store(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'name'            => 'required|string|max:100',
+            'months'          => 'required|integer|min:1|max:120',
+            'price'           => 'required|numeric|min:0|max:999999',
+            'currency_symbol' => 'sometimes|string|max:5',
+            'is_active'       => 'sometimes|boolean',
+        ]);
+
+        $plan = $this->planService->createPlan($data);
+
+        return $this->successResponse([
+            'plan' => [
+                'id'              => $plan->id,
+                'name'            => $plan->name,
+                'months'          => $plan->months,
+                'price'           => (float) $plan->price,
+                'currency_symbol' => $plan->currency_symbol,
+                'formatted_price' => $plan->formattedPrice(),
+                'is_active'       => $plan->is_active,
+            ],
+        ], ['message' => 'Plan created successfully.'], 201);
+    }
+
+    /** Update plan price, currency, or active state. */
     public function update(Request $request, string $id): JsonResponse
     {
         $data = $request->validate([
-            'price'           => 'required|numeric|min:0|max:999999',
+            'price'           => 'sometimes|numeric|min:0|max:999999',
             'currency_symbol' => 'sometimes|string|max:5',
             'is_active'       => 'sometimes|boolean',
         ]);
@@ -58,11 +84,20 @@ class AdminValidityPlanController extends Controller
             'plan' => [
                 'id'              => $plan->id,
                 'name'            => $plan->name,
+                'months'          => $plan->months,
                 'price'           => (float) $plan->price,
                 'currency_symbol' => $plan->currency_symbol,
                 'formatted_price' => $plan->formattedPrice(),
                 'is_active'       => $plan->is_active,
             ],
         ], ['message' => 'Plan updated successfully.']);
+    }
+
+    /** Delete a validity plan. */
+    public function destroy(string $id): JsonResponse
+    {
+        $this->planService->deletePlan($id);
+
+        return $this->successResponse(null, ['message' => 'Plan deleted successfully.']);
     }
 }
