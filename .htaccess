@@ -1,0 +1,10 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Prevent direct browsing of sensitive files like .env or git
+    RewriteRule ^(\.env|\.git|composer\.(json|lock)|package\.json) - [F,L]
+
+    # Rewrite all requests to the public directory
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
