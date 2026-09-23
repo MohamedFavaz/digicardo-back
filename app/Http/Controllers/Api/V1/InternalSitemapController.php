@@ -9,6 +9,7 @@ use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class InternalSitemapController extends Controller
 {
@@ -16,9 +17,17 @@ class InternalSitemapController extends Controller
 
     /**
      * Retrieve paginated public, indexable profiles for XML sitemap generation.
+     * Protected by internal service secret.
      */
     public function index(Request $request): JsonResponse
     {
+        $expectedSecret = (string) (config('services.internal.secret') ?: env('INTERNAL_SERVICE_SECRET'));
+        $providedSecret = (string) $request->header('x-internal-secret', $request->header('X-Internal-Secret', ''));
+
+        if (empty($expectedSecret) || empty($providedSecret) || !hash_equals($expectedSecret, $providedSecret)) {
+            throw new AccessDeniedHttpException('Unauthorized internal service access.');
+        }
+
         $limit = min((int) $request->query('limit', 500), 1000);
         $cursor = $request->query('cursor');
 

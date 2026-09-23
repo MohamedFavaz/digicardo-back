@@ -28,10 +28,10 @@ class InternalDomainResolutionController extends Controller
      */
     public function resolve(Request $request): JsonResponse
     {
-        $expectedSecret = (string) config('services.internal.secret', env('INTERNAL_SERVICE_SECRET', 'local-internal-service-secret'));
+        $expectedSecret = (string) (config('services.internal.secret') ?: env('INTERNAL_SERVICE_SECRET'));
         $providedSecret = (string) $request->header('x-internal-secret', $request->header('X-Internal-Secret', ''));
 
-        if (empty($providedSecret) || !hash_equals($expectedSecret, $providedSecret)) {
+        if (empty($expectedSecret) || empty($providedSecret) || !hash_equals($expectedSecret, $providedSecret)) {
             throw new AccessDeniedHttpException('Unauthorized internal service access.');
         }
 

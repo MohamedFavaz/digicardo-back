@@ -53,10 +53,11 @@ class TemplateAndThemeTest extends TestCase
 
         $templates = $response->json('data');
         $this->assertIsArray($templates);
-        $this->assertCount(1, $templates);
+        $this->assertCount(count(\App\Services\TemplateService::APPROVED_TEMPLATES), $templates);
 
         $ids = array_column($templates, 'id');
         $this->assertContains('vcard', $ids);
+        $this->assertContains('botanical', $ids);
     }
 
     public function test_invalid_template_id_rejected(): void

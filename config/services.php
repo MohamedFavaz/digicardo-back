@@ -24,4 +24,8 @@ return [
         ],
     ],
 
+    'internal' => [
+        'secret' => env('INTERNAL_SERVICE_SECRET'),
+    ],
+
 ];

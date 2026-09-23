@@ -355,4 +355,51 @@ class MediaTest extends TestCase
         $this->assertDatabaseMissing('profile_media', ['id' => $media->id]);
         $this->assertFalse(Storage::disk('public')->exists('profiles/test/old.jpg'));
     }
+
+    public function test_authenticated_user_can_upload_pdf_document(): void
+    {
+        $file = UploadedFile::fake()->create('company-brochure.pdf', 1024, 'application/pdf');
+
+        $response = $this->actingAs($this->user, 'sanctum')
+            ->postJson(route('api.v1.media.upload.document'), [
+                'document' => $file,
+                'title' => 'Corporate Brochure',
+            ]);
+
+        $response->assertStatus(201)
+            ->assertJson([
+                'success' => true,
+                'data' => [
+                    'type' => 'document',
+                    'mime_type' => 'application/pdf',
+                    'alt_text' => 'Corporate Brochure',
+                ],
+            ]);
+
+        $mediaId = $response->json('data.id');
+        $this->assertDatabaseHas('profile_media', [
+            'id' => $mediaId,
+            'profile_id' => $this->profile->id,
+            'type' => 'document',
+            'mime_type' => 'application/pdf',
+        ]);
+    }
+
+    public function test_invalid_document_type_rejected(): void
+    {
+        $file = UploadedFile::fake()->create('script.exe', 100, 'application/x-msdownload');
+
+        $response = $this->actingAs($this->user, 'sanctum')
+            ->postJson(route('api.v1.media.upload.document'), [
+                'document' => $file,
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'error' => [
+                    'code' => 'VALIDATION_ERROR',
+                ],
+            ]);
+    }
 }

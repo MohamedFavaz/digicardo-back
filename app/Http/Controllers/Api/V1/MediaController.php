@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Media\UploadAvatarRequest;
 use App\Http\Requests\Media\UploadCoverRequest;
+use App\Http\Requests\Media\UploadDocumentRequest;
 use App\Http\Requests\Media\UploadImageRequest;
 use App\Http\Resources\Api\V1\MediaResource;
 use App\Http\Resources\Api\V1\ProfileResource;
@@ -97,6 +98,24 @@ class MediaController extends Controller
         return $this->successResponse(
             new MediaResource($media),
             ['message' => 'Image uploaded successfully.'],
+            Response::HTTP_CREATED
+        );
+    }
+
+    /**
+     * Upload a PDF document (brochure, profile, catalog).
+     */
+    public function uploadDocument(UploadDocumentRequest $request): JsonResponse
+    {
+        $media = $this->mediaService->storeDocument(
+            $request->user(),
+            $request->file('document'),
+            $request->input('title')
+        );
+
+        return $this->successResponse(
+            new MediaResource($media),
+            ['message' => 'Document uploaded successfully.'],
             Response::HTTP_CREATED
         );
     }

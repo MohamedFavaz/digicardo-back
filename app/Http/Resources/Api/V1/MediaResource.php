@@ -25,6 +25,7 @@ class MediaResource extends JsonResource
             'width' => $this->width,
             'height' => $this->height,
             'alt_text' => $this->alt_text,
+            'mime_type' => $this->mime_type,
             'size' => $this->size,
             'created_at' => $this->created_at?->toISOString(),
         ];

@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\ProfileAnalyticsController;
 use App\Http\Controllers\Api\V1\ProfileBlockController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ProfileDomainController;
+use App\Http\Controllers\Api\V1\ProfileSeoController;
 use App\Http\Controllers\Api\V1\PublicProfileController;
 use App\Http\Controllers\Api\V1\TemplateController;
 use Illuminate\Support\Facades\Route;
@@ -119,10 +120,16 @@ Route::prefix('v1')->group(function () {
         Route::put('/profile/appearance', [ProfileController::class, 'updateAppearance'])->name('api.v1.profile.appearance.update');
         Route::patch('/profile/appearance', [ProfileController::class, 'updateAppearance']);
 
+        // Profile SEO & OpenGraph Endpoints
+        Route::get('/profile/seo', [ProfileSeoController::class, 'show'])->name('api.v1.profile.seo.show');
+        Route::patch('/profile/seo', [ProfileSeoController::class, 'update'])->name('api.v1.profile.seo.update');
+        Route::put('/profile/seo', [ProfileSeoController::class, 'update']);
+
         // Media Management Endpoints
         Route::prefix('media')->group(function () {
             Route::get('/', [MediaController::class, 'index'])->name('api.v1.media.index');
             Route::post('/images', [MediaController::class, 'uploadImage'])->name('api.v1.media.upload.image');
+            Route::post('/documents', [MediaController::class, 'uploadDocument'])->name('api.v1.media.upload.document');
             Route::delete('/{media}', [MediaController::class, 'destroy'])->name('api.v1.media.destroy');
         });
 

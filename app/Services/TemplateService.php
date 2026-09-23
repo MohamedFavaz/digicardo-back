@@ -22,6 +22,23 @@ class TemplateService
                 'animation' => 'none',
             ],
         ],
+        'botanical' => [
+            'id' => 'botanical',
+            'name' => 'Botanical Corporate',
+            'description' => 'Executive corporate digital visiting card featuring 10 background layers, 5 color palettes, multi-position social media, PDF document showcase, and Google Drive links.',
+            'category' => 'Business',
+            'default_theme' => [
+                'color_background' => '#F4EFEB',
+                'color_surface' => '#FFFFFF',
+                'color_text_primary' => '#141A17',
+                'color_text_secondary' => '#4A564F',
+                'color_accent' => '#2D4A3E',
+                'font_family' => 'outfit',
+                'button_radius' => 'large',
+                'button_style' => 'solid',
+                'animation' => 'none',
+            ],
+        ],
     ];
 
     public const FONT_ALLOWLIST = [

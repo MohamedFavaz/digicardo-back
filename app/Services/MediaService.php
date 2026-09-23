@@ -321,6 +321,47 @@ class MediaService
     }
 
     /**
+     * Store uploaded PDF document.
+     */
+    public function storeDocument(User $user, UploadedFile $file, ?string $title = null): ProfileMedia
+    {
+        $profile = $user->profile;
+        if (!$profile) {
+            throw new NotFoundHttpException('Profile not found.');
+        }
+
+        $mediaId = (string) Str::ulid();
+        $storagePath = "documents/{$profile->id}/{$mediaId}.pdf";
+
+        Storage::disk($this->disk)->putFileAs(
+            "documents/{$profile->id}",
+            $file,
+            "{$mediaId}.pdf"
+        );
+
+        try {
+            return DB::transaction(function () use ($user, $profile, $mediaId, $storagePath, $file, $title) {
+                return ProfileMedia::create([
+                    'id' => $mediaId,
+                    'profile_id' => $profile->id,
+                    'user_id' => $user->id,
+                    'type' => 'document',
+                    'disk' => $this->disk,
+                    'path' => $storagePath,
+                    'mime_type' => 'application/pdf',
+                    'size' => $file->getSize() ?: 0,
+                    'width' => null,
+                    'height' => null,
+                    'alt_text' => $title ?: $file->getClientOriginalName(),
+                ]);
+            });
+        } catch (\Throwable $e) {
+            Storage::disk($this->disk)->delete($storagePath);
+            throw $e;
+        }
+    }
+
+    /**
      * Delete an unreferenced media item owned by the user.
      */
     public function deleteMedia(User $user, ProfileMedia $media): void

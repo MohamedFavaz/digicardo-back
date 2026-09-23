@@ -71,7 +71,7 @@ class PublicProfileController extends Controller
             [],
             Response::HTTP_OK,
             [
-                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                'Cache-Control' => 'public, max-age=30, s-maxage=60, stale-while-revalidate=120',
             ]
         );
     }

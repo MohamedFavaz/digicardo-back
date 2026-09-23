@@ -24,8 +24,8 @@ class UpdateProfileSeoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'seo_title' => ['nullable', 'string', 'max:70'],
-            'seo_description' => ['nullable', 'string', 'max:160'],
+            'seo_title' => ['nullable', 'string', 'max:100'],
+            'seo_description' => ['nullable', 'string', 'max:300'],
             'seo_keywords' => ['nullable', 'array', 'max:10'],
             'seo_keywords.*' => ['string', 'max:50'],
             'og_title' => ['nullable', 'string', 'max:95'],
@@ -65,6 +65,11 @@ class UpdateProfileSeoRequest extends FormRequest
             ));
         }
 
+        if ($this->has('og_image_media_id')) {
+            $mediaIdVal = $this->input('og_image_media_id');
+            $sanitized['og_image_media_id'] = !empty($mediaIdVal) ? trim((string) $mediaIdVal) : null;
+        }
+
         if (!empty($sanitized)) {
             $this->merge($sanitized);
         }
@@ -77,7 +82,7 @@ class UpdateProfileSeoRequest extends FormRequest
     {
         $validator->after(function (Validator $validator) {
             $mediaId = $this->input('og_image_media_id');
-            if ($mediaId) {
+            if (!empty($mediaId)) {
                 $user = $this->user();
                 $exists = ProfileMedia::where('id', $mediaId)
                     ->where('user_id', $user->id)

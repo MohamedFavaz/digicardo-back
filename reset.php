@@ -1,1 +1,4 @@
-<?php require 'bootstrap/app.php'; \->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap(); App\Models\User::where('email', 'admin@Digicardo.app')->update(['password' => Illuminate\Support\Facades\Hash::make('password')]); echo 'Password reset successfully to: password'; unlink('reset.php');
+<?php
+// Deprecated & disabled for security compliance.
+http_response_code(404);
+exit;

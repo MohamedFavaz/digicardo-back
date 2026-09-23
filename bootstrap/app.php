@@ -207,6 +207,21 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (Throwable $e, Request $request) {
             if ($request->is('api/*') || $request->wantsJson()) {
+                $eventId = null;
+                try {
+                    if (app()->bound(\App\Contracts\ErrorTrackingProviderInterface::class)) {
+                        $tracker = app(\App\Contracts\ErrorTrackingProviderInterface::class);
+                        $eventId = $tracker->captureException($e, [
+                            'url' => $request->fullUrl(),
+                            'method' => $request->method(),
+                            'ip' => $request->ip(),
+                            'user_id' => $request->user()?->id,
+                        ]);
+                    }
+                } catch (\Throwable) {
+                    // Telemetry reporting should never crash the error response
+                }
+
                 $isDebug = config('app.debug', false);
 
                 return response()->json([
@@ -214,6 +229,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     'error' => [
                         'code' => 'SERVER_ERROR',
                         'message' => $isDebug ? $e->getMessage() : 'An unexpected server error occurred.',
+                        'event_id' => $eventId,
                         'details' => $isDebug ? [
                             'exception' => get_class($e),
                             'file' => $e->getFile(),

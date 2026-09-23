@@ -16,7 +16,7 @@ class ProfileService
     /**
      * Templates available on the Free plan. All other templates require AdvancedTemplates entitlement.
      */
-    public const FREE_TEMPLATES = ['vcard'];
+    public const FREE_TEMPLATES = ['vcard', 'botanical'];
 
     public function __construct(
         protected FeatureEntitlementService $entitlementService,
@@ -247,8 +247,9 @@ class ProfileService
      */
     public function getPublicProfileStats(Profile $profile): array
     {
-        // 1. Profile Views
-        $viewType = \App\Enums\AnalyticsEventType::ProfileView->value;
+        return Cache::remember("profile_public_stats:{$profile->id}", 60, function () use ($profile) {
+            // 1. Profile Views
+            $viewType = \App\Enums\AnalyticsEventType::ProfileView->value;
         $viewsFromDaily = (int) \App\Models\AnalyticsDailyMetric::where('profile_id', $profile->id)
             ->where('event_type', $viewType)
             ->sum('total_count');
@@ -296,12 +297,13 @@ class ProfileService
         // 5. Total Engagement
         $totalEngage = $totalViews + $totalClicks + $totalActions;
 
-        return [
-            'views' => $totalViews,
-            'clicks' => $totalClicks,
-            'actions' => $totalActions,
-            'days_live' => $daysLive,
-            'engage' => $totalEngage,
-        ];
+            return [
+                'views' => $totalViews,
+                'clicks' => $totalClicks,
+                'actions' => $totalActions,
+                'days_live' => $daysLive,
+                'engage' => $totalEngage,
+            ];
+        });
     }
 }
