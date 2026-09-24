@@ -203,6 +203,16 @@ class ProfileService
                 } elseif (!empty($customOpts['custom_avatar_url'])) {
                     $lockedProfile->avatar_url = $customOpts['custom_avatar_url'];
                 }
+
+                // Synchronize custom banner/cover URL with the main profile cover_url
+                if (!empty($customOpts['banner_image_url'])) {
+                    $lockedProfile->cover_url = $customOpts['banner_image_url'];
+                } elseif (!empty($customOpts['banner_images']) && is_array($customOpts['banner_images'])) {
+                    $firstBanner = reset($customOpts['banner_images']);
+                    if (!empty($firstBanner) && is_string($firstBanner)) {
+                        $lockedProfile->cover_url = $firstBanner;
+                    }
+                }
             }
 
             $lockedProfile->version = ((int) $lockedProfile->version) + 1;
