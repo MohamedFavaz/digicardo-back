@@ -18,16 +18,41 @@ class AgentAuthController extends Controller
      */
     public function login(Request $request): JsonResponse
     {
-        $request->merge([
-            'email' => strtolower(trim((string) $request->input('email'))),
-        ]);
+        $loginInput = strtolower(trim((string) $request->input('email')));
+        $targetEmail = $loginInput;
+
+        // Support login by email OR mobile
+        if (!str_contains($loginInput, '@')) {
+            $matchedAgent = \App\Models\User::where('role', 'agent')
+                ->where('mobile', $loginInput)
+                ->first();
+            if ($matchedAgent) {
+                $targetEmail = $matchedAgent->email;
+            }
+        }
 
         $validated = $request->validate([
-            'email' => 'required|string|email',
+            'email' => 'required|string',
             'password' => 'required|string|min:8',
         ]);
 
-        if (!Auth::attempt($validated, $request->boolean('remember', true))) {
+        if (!Auth::attempt(['email' => $targetEmail, 'password' => $validated['password']], $request->boolean('remember', true))) {
+            // Inform clearly if this email is a customer instead of an agent
+            $existingUser = \App\Models\User::where('email', $targetEmail)->first();
+            if ($existingUser) {
+                $role = $existingUser->role;
+                $isAgent = ($role instanceof UserRole && $role->isAgent()) || $role === 'agent';
+                if (!$isAgent) {
+                    return response()->json([
+                        'success' => false,
+                        'error' => [
+                            'code' => 'NOT_AN_AGENT_ACCOUNT',
+                            'message' => 'This account is a customer account, not an agent account. Please log in at /login.',
+                        ],
+                    ], Response::HTTP_FORBIDDEN);
+                }
+            }
+
             return response()->json([
                 'success' => false,
                 'error' => [

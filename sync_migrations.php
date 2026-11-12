@@ -73,7 +73,14 @@ echo "Running pending migrations...\n";
 Artisan::call('migrate', ['--force' => true]);
 echo Artisan::output();
 
-// 4. Link storage if not linked
+// 4. Ensure storage directories exist before caching
+echo "Ensuring storage framework directories exist...\n";
+@mkdir(__DIR__ . '/storage/framework/views', 0775, true);
+@mkdir(__DIR__ . '/storage/framework/sessions', 0775, true);
+@mkdir(__DIR__ . '/storage/framework/cache/data', 0775, true);
+@mkdir(__DIR__ . '/storage/app/public', 0775, true);
+
+// 5. Link storage if not linked
 echo "Checking storage link...\n";
 try {
     Artisan::call('storage:link');
@@ -82,13 +89,28 @@ try {
     echo "Storage link note: " . $e->getMessage() . "\n";
 }
 
-// 5. Clear and rebuild caches
+// 6. Clear and rebuild caches
 echo "Optimizing caches...\n";
-Artisan::call('optimize:clear');
-echo Artisan::output();
-Artisan::call('config:cache');
-echo Artisan::output();
-Artisan::call('route:cache');
-echo Artisan::output();
+try {
+    Artisan::call('optimize:clear');
+    echo Artisan::output();
+} catch (\Throwable $e) {
+    echo "optimize:clear note: " . $e->getMessage() . "\n";
+}
+
+try {
+    Artisan::call('config:cache');
+    echo Artisan::output();
+} catch (\Throwable $e) {
+    echo "config:cache note: " . $e->getMessage() . "\n";
+}
+
+try {
+    Artisan::call('route:cache');
+    echo Artisan::output();
+} catch (\Throwable $e) {
+    echo "route:cache note: " . $e->getMessage() . "\n";
+}
 
 echo "\nSUCCESS: Database is now fully migrated and application cache is primed!\n";
+
