@@ -198,7 +198,9 @@ class ProfileService
 
                 // Synchronize custom avatar URL with the main profile avatar_url
                 $customOpts = $data['theme_tokens']['custom_options'] ?? [];
-                if (!empty($customOpts['profile_image_url'])) {
+                if (!empty($customOpts['remove_avatar'])) {
+                    $lockedProfile->avatar_url = null;
+                } elseif (!empty($customOpts['profile_image_url'])) {
                     $lockedProfile->avatar_url = $customOpts['profile_image_url'];
                 } elseif (!empty($customOpts['custom_avatar_url'])) {
                     $lockedProfile->avatar_url = $customOpts['custom_avatar_url'];
@@ -212,6 +214,16 @@ class ProfileService
                     if (!empty($firstBanner) && is_string($firstBanner)) {
                         $lockedProfile->cover_url = $firstBanner;
                     }
+                }
+
+                // Synchronize display name override if provided
+                if (!empty($customOpts['display_name_override']) && is_string($customOpts['display_name_override'])) {
+                    $lockedProfile->display_name = trim($customOpts['display_name_override']);
+                }
+
+                // Synchronize bio override if provided
+                if (isset($customOpts['bio_override']) && is_string($customOpts['bio_override'])) {
+                    $lockedProfile->bio = trim($customOpts['bio_override']);
                 }
             }
 

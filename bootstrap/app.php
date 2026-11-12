@@ -36,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            'agent' => \App\Http\Middleware\EnsureUserIsAgent::class,
         ]);
 
         $middleware->validateCsrfTokens(except: [
@@ -203,6 +204,10 @@ return Application::configure(basePath: dirname(__DIR__))
                     ],
                 ], $e->getStatusCode());
             }
+        });
+
+        $exceptions->render(function (\Illuminate\Http\Exceptions\HttpResponseException $e) {
+            return $e->getResponse();
         });
 
         $exceptions->render(function (Throwable $e, Request $request) {

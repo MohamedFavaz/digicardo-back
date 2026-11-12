@@ -373,7 +373,7 @@ class AdminUserService
                 'username' => $username,
                 'display_name' => $data['name'],
                 'bio' => 'Welcome to my Digicardo page!',
-                'template_id' => 'vcard_business',
+                'template_id' => 'vcard',
                 'is_public' => true,
                 'moderation_status' => 'active',
                 'version' => 1,
@@ -547,13 +547,46 @@ class AdminUserService
             DB::table('subscriptions')->where('user_id', $user->id)->delete();
             DB::table('admin_sales')->where('user_id', $user->id)->delete();
             DB::table('moderation_actions')->where('target_type', 'user')->where('target_id', $user->id)->delete();
+            DB::table('email_deliveries')->where('user_id', $user->id)->delete();
+
+            $profileId = $user->profile?->id;
+
+            // Clean up any agent cards and transactions linked to this user or their profile
+            $customerCardQuery = DB::table('agent_cards')->where('customer_user_id', $user->id);
+            if ($profileId) {
+                $customerCardQuery->orWhere('profile_id', $profileId);
+            }
+            $customerCardIds = $customerCardQuery->pluck('id')->toArray();
+            if (!empty($customerCardIds)) {
+                DB::table('agent_transactions')->whereIn('agent_card_id', $customerCardIds)->update(['agent_card_id' => null]);
+                DB::table('agent_cards')->whereIn('id', $customerCardIds)->delete();
+            }
+
+            // If deleting an agent user, clean up agent's created cards, quotas, ledger, and customer references
+            $isAgent = ($user->role instanceof UserRole && $user->role->isAgent()) || $user->role === 'agent';
+            if ($isAgent) {
+                $createdCardIds = DB::table('agent_cards')->where('agent_id', $user->id)->pluck('id')->toArray();
+                if (!empty($createdCardIds)) {
+                    DB::table('agent_transactions')->whereIn('agent_card_id', $createdCardIds)->update(['agent_card_id' => null]);
+                    DB::table('agent_cards')->whereIn('id', $createdCardIds)->delete();
+                }
+                DB::table('agent_quotas')->where('agent_id', $user->id)->delete();
+                DB::table('agent_commission_configs')->where('agent_id', $user->id)->delete();
+                DB::table('agent_transactions')->where('agent_id', $user->id)->delete();
+                DB::table('agent_payment_records')->where('agent_id', $user->id)->delete();
+                DB::table('users')->where('agent_id', $user->id)->update(['agent_id' => null]);
+            }
 
             // Clean up profile data completely
             if ($user->profile) {
-                $profileId = $user->profile->id;
                 DB::table('profile_blocks')->where('profile_id', $profileId)->delete();
                 DB::table('profile_media')->where('profile_id', $profileId)->orWhere('user_id', $user->id)->delete();
                 DB::table('profile_domains')->where('profile_id', $profileId)->orWhere('user_id', $user->id)->delete();
+                DB::table('abuse_reports')->where('profile_id', $profileId)->delete();
+                DB::table('analytics_daily_metrics')->where('profile_id', $profileId)->delete();
+                DB::table('analytics_events')->where('profile_id', $profileId)->delete();
+                DB::table('analytics_unique_visitors')->where('profile_id', $profileId)->delete();
+                DB::table('contact_submissions')->where('profile_id', $profileId)->delete();
                 $user->profile->forceDelete();
             }
 
@@ -670,22 +703,79 @@ class AdminUserService
     {
         $request = request();
 
+        // 1. Check if an AGENT was impersonating
+        if ($request->hasSession() && $request->session()->has('impersonator_agent_id')) {
+            $agentId = $request->session()->get('impersonator_agent_id');
+            $agent = User::find($agentId);
+
+            if (!$agent) {
+                throw new \Symfony\Component\HttpKernel\Exception\NotFoundHttpException(
+                    'No active agent account available to restore.'
+                );
+            }
+
+            $impersonatedUserId = \Illuminate\Support\Facades\Auth::guard('web')->id();
+
+            // Clear agent impersonation markers
+            $request->session()->forget([
+                'impersonator_agent_id',
+                'impersonator_agent_name',
+                'impersonator_agent_email',
+                'impersonator_role',
+                'impersonated_at',
+            ]);
+
+            // Restore agent session
+            \Illuminate\Support\Facades\Auth::guard('web')->login($agent);
+            $request->session()->regenerate();
+            $request->session()->save();
+
+            try {
+                $this->sessionService->registerSession($agent, $request);
+            } catch (\Throwable $e) {
+            }
+
+            // Record audit log
+            try {
+                $this->auditService->log(
+                    $agent,
+                    'user.agent_impersonation_stopped',
+                    'user',
+                    $impersonatedUserId ?? 'unknown',
+                    [
+                        'agent_id' => $agent->id,
+                        'restored_email' => $agent->email,
+                    ]
+                );
+            } catch (\Throwable $e) {
+            }
+
+            return [
+                'admin' => $agent,
+                'redirect_url' => '/agent/cards',
+            ];
+        }
+
+        // 2. Administrator impersonation check
         if ($request->hasSession() && $request->session()->has('impersonator_admin_id')) {
             $adminId = $request->session()->get('impersonator_admin_id');
             $admin = User::find($adminId);
         } else {
-            // Check if current session user is already an admin
+            // Check if current session user is already an admin or agent
             $currentUser = \Illuminate\Support\Facades\Auth::guard('web')->user();
-            $isCurrentAdmin = $currentUser && (
-                ($currentUser->role instanceof UserRole && $currentUser->role->isAdmin())
-                || $currentUser->role === 'admin'
-                || (string) $currentUser->role === 'admin'
-            );
+            $userRole = $currentUser?->role instanceof UserRole ? $currentUser->role->value : (string) $currentUser?->role;
 
-            if ($isCurrentAdmin) {
+            if ($userRole === 'admin') {
                 return [
                     'admin' => $currentUser,
                     'redirect_url' => '/admin/my-links',
+                ];
+            }
+
+            if ($userRole === 'agent') {
+                return [
+                    'admin' => $currentUser,
+                    'redirect_url' => '/agent/cards',
                 ];
             }
 
@@ -707,6 +797,7 @@ class AdminUserService
                 'impersonator_admin_id',
                 'impersonator_admin_name',
                 'impersonator_admin_email',
+                'impersonator_role',
                 'impersonated_at',
             ]);
 

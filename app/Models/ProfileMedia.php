@@ -89,17 +89,9 @@ class ProfileMedia extends Model
         }
 
         try {
-            $url = Storage::disk($this->disk)->url($this->path);
-            if (str_contains($url, 'localhost') || str_contains($url, '127.0.0.1')) {
-                $appUrl = env('APP_URL');
-                if ($appUrl && !str_contains($appUrl, 'localhost') && !str_contains($appUrl, '127.0.0.1')) {
-                    return rtrim($appUrl, '/') . '/storage/' . ltrim($this->path, '/');
-                }
-                return 'https://lightslategray-snake-169437.hostingersite.com/storage/' . ltrim($this->path, '/');
-            }
-            return $url;
+            return Storage::disk($this->disk)->url($this->path);
         } catch (\Throwable) {
-            return 'https://lightslategray-snake-169437.hostingersite.com/storage/' . ltrim($this->path, '/');
+            return '/storage/' . ltrim($this->path, '/');
         }
     }
 }

@@ -286,6 +286,37 @@ Route::prefix('v1')->group(function () {
             Route::patch('/access-requests/{id}/review', [\App\Http\Controllers\Api\V1\AccessRequestController::class, 'review'])->name('api.v1.admin.access-requests.review');
             Route::delete('/access-requests/{id}', [\App\Http\Controllers\Api\V1\AccessRequestController::class, 'destroy'])->name('api.v1.admin.access-requests.destroy');
 
+            // ── Admin Agent Management ─────────────────────────────────────────────
+            Route::prefix('agents')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Api\V1\Admin\AdminAgentController::class, 'index'])->name('api.v1.admin.agents.index');
+                Route::post('/', [\App\Http\Controllers\Api\V1\Admin\AdminAgentController::class, 'store'])->name('api.v1.admin.agents.store');
+                Route::get('/dashboard', [\App\Http\Controllers\Api\V1\Admin\AdminAgentController::class, 'dashboard'])->name('api.v1.admin.agents.dashboard');
+                Route::get('/{id}', [\App\Http\Controllers\Api\V1\Admin\AdminAgentController::class, 'show'])->name('api.v1.admin.agents.show');
+                Route::put('/{id}', [\App\Http\Controllers\Api\V1\Admin\AdminAgentController::class, 'update'])->name('api.v1.admin.agents.update');
+                Route::patch('/{id}', [\App\Http\Controllers\Api\V1\Admin\AdminAgentController::class, 'update']);
+                Route::delete('/{id}', [\App\Http\Controllers\Api\V1\Admin\AdminAgentController::class, 'destroy'])->name('api.v1.admin.agents.destroy');
+                Route::post('/{id}/activate', [\App\Http\Controllers\Api\V1\Admin\AdminAgentController::class, 'activate'])->name('api.v1.admin.agents.activate');
+                Route::post('/{id}/deactivate', [\App\Http\Controllers\Api\V1\Admin\AdminAgentController::class, 'deactivate'])->name('api.v1.admin.agents.deactivate');
+            });
+
+            // ── Admin Agent Cards ──────────────────────────────────────────────────
+            Route::prefix('agent-cards')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Api\V1\Admin\AdminAgentCardController::class, 'index'])->name('api.v1.admin.agent-cards.index');
+                Route::get('/{id}', [\App\Http\Controllers\Api\V1\Admin\AdminAgentCardController::class, 'show'])->name('api.v1.admin.agent-cards.show');
+                Route::put('/{id}', [\App\Http\Controllers\Api\V1\Admin\AdminAgentCardController::class, 'update'])->name('api.v1.admin.agent-cards.update');
+                Route::delete('/{id}', [\App\Http\Controllers\Api\V1\Admin\AdminAgentCardController::class, 'destroy'])->name('api.v1.admin.agent-cards.destroy');
+                Route::post('/{id}/activate', [\App\Http\Controllers\Api\V1\Admin\AdminAgentCardController::class, 'activate'])->name('api.v1.admin.agent-cards.activate');
+                Route::post('/{id}/deactivate', [\App\Http\Controllers\Api\V1\Admin\AdminAgentCardController::class, 'deactivate'])->name('api.v1.admin.agent-cards.deactivate');
+            });
+
+            // ── Admin Agent Finance ────────────────────────────────────────────────
+            Route::prefix('agent-finance')->group(function () {
+                Route::get('/dashboard', [\App\Http\Controllers\Api\V1\Admin\AdminAgentFinanceController::class, 'dashboard'])->name('api.v1.admin.agent-finance.dashboard');
+                Route::get('/revenue', [\App\Http\Controllers\Api\V1\Admin\AdminAgentFinanceController::class, 'revenue'])->name('api.v1.admin.agent-finance.revenue');
+                Route::get('/payments', [\App\Http\Controllers\Api\V1\Admin\AdminAgentFinanceController::class, 'payments'])->name('api.v1.admin.agent-finance.payments');
+                Route::post('/payments', [\App\Http\Controllers\Api\V1\Admin\AdminAgentFinanceController::class, 'recordPayment'])->name('api.v1.admin.agent-finance.payments.store');
+            });
+
             // Operational Health & Reliability (Phase 17)
             Route::prefix('operations')->group(function () {
                 Route::get('/health', [\App\Http\Controllers\Api\V1\Admin\OperationsController::class, 'health'])->name('api.v1.admin.operations.health');
@@ -306,6 +337,52 @@ Route::prefix('v1')->group(function () {
 
     // Public Active Plans
     Route::get('/plans', [\App\Http\Controllers\Api\V1\PlanController::class, 'index'])->name('api.v1.plans.index');
+
+    // ── Agent Auth (Public, Rate-Limited) ───────────────────────────────────
+    Route::prefix('agent/auth')->group(function () {
+        Route::post('/login', [\App\Http\Controllers\Api\V1\Agent\AgentAuthController::class, 'login'])
+            ->middleware('throttle:login')
+            ->name('api.v1.agent.auth.login');
+    });
+
+    // ── Agent Panel (Protected: auth + agent role) ──────────────────────────
+    Route::prefix('agent')->middleware(['auth:sanctum', 'agent'])->group(function () {
+        // Agent Auth
+        Route::post('/auth/logout', [\App\Http\Controllers\Api\V1\Agent\AgentAuthController::class, 'logout'])->name('api.v1.agent.auth.logout');
+        Route::get('/auth/me', [\App\Http\Controllers\Api\V1\Agent\AgentAuthController::class, 'me'])->name('api.v1.agent.auth.me');
+
+        // Agent Profile Management
+        Route::prefix('profile')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\V1\Agent\AgentProfileController::class, 'show'])->name('api.v1.agent.profile.show');
+            Route::put('/', [\App\Http\Controllers\Api\V1\Agent\AgentProfileController::class, 'update'])->name('api.v1.agent.profile.update');
+            Route::post('/avatar', [\App\Http\Controllers\Api\V1\Agent\AgentProfileController::class, 'uploadAvatar'])->name('api.v1.agent.profile.avatar.upload');
+            Route::delete('/avatar', [\App\Http\Controllers\Api\V1\Agent\AgentProfileController::class, 'deleteAvatar'])->name('api.v1.agent.profile.avatar.delete');
+            Route::post('/password', [\App\Http\Controllers\Api\V1\Agent\AgentProfileController::class, 'updatePassword'])->name('api.v1.agent.profile.password.update');
+        });
+
+        // Agent Dashboard
+        Route::get('/dashboard', [\App\Http\Controllers\Api\V1\Agent\AgentDashboardController::class, 'index'])->name('api.v1.agent.dashboard');
+
+        // Agent Card Management
+        Route::prefix('cards')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\V1\Agent\AgentCardController::class, 'index'])->name('api.v1.agent.cards.index');
+            Route::post('/', [\App\Http\Controllers\Api\V1\Agent\AgentCardController::class, 'store'])->name('api.v1.agent.cards.store');
+            Route::get('/limits', [\App\Http\Controllers\Api\V1\Agent\AgentCardController::class, 'limits'])->name('api.v1.agent.cards.limits');
+            Route::get('/{id}', [\App\Http\Controllers\Api\V1\Agent\AgentCardController::class, 'show'])->name('api.v1.agent.cards.show');
+            Route::put('/{id}', [\App\Http\Controllers\Api\V1\Agent\AgentCardController::class, 'update'])->name('api.v1.agent.cards.update');
+            Route::delete('/{id}', [\App\Http\Controllers\Api\V1\Agent\AgentCardController::class, 'destroy'])->name('api.v1.agent.cards.destroy');
+            Route::post('/{id}/publish', [\App\Http\Controllers\Api\V1\Agent\AgentCardController::class, 'publish'])->name('api.v1.agent.cards.publish');
+            Route::post('/{id}/unpublish', [\App\Http\Controllers\Api\V1\Agent\AgentCardController::class, 'unpublish'])->name('api.v1.agent.cards.unpublish');
+            Route::post('/{id}/impersonate', [\App\Http\Controllers\Api\V1\Agent\AgentCardController::class, 'impersonate'])->name('api.v1.agent.cards.impersonate');
+        });
+
+        // Agent Earnings
+        Route::get('/earnings', [\App\Http\Controllers\Api\V1\Agent\AgentEarningsController::class, 'summary'])->name('api.v1.agent.earnings');
+        Route::get('/earnings/transactions', [\App\Http\Controllers\Api\V1\Agent\AgentEarningsController::class, 'transactions'])->name('api.v1.agent.earnings.transactions');
+
+        // Agent Templates & Themes (reuse existing public endpoints)
+        Route::get('/templates', [TemplateController::class, 'index'])->name('api.v1.agent.templates');
+    });
 
     // Public Webhooks
     Route::post('/webhooks/stripe', [\App\Http\Controllers\Api\V1\WebhookController::class, 'handleStripe'])->name('api.v1.webhooks.stripe');

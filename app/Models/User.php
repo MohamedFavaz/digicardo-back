@@ -38,6 +38,9 @@ class User extends Authenticatable
         'validity_months',
         'validity_label',
         'plan_price_paid',
+        'agent_id',
+        'mobile',
+        'avatar_url',
     ];
 
     /**
@@ -165,5 +168,72 @@ class User extends Authenticatable
     public function adminAuditLogs(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(AdminAuditLog::class, 'actor_id');
+    }
+
+    // ── Agent Management Relationships ──
+
+    /**
+     * The agent who created this user (if user was created by an agent).
+     */
+    public function createdByAgent(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'agent_id');
+    }
+
+    /**
+     * Customer users created by this agent.
+     */
+    public function agentCustomers(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(User::class, 'agent_id');
+    }
+
+    /**
+     * Agent's card creation quota.
+     */
+    public function agentQuota(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(AgentQuota::class, 'agent_id');
+    }
+
+    /**
+     * Cards created by this agent.
+     */
+    public function agentCards(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(AgentCard::class, 'agent_id');
+    }
+
+    /**
+     * Agent's commission configuration.
+     */
+    public function commissionConfig(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(AgentCommissionConfig::class, 'agent_id');
+    }
+
+    /**
+     * Agent's financial transactions.
+     */
+    public function agentTransactions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(AgentTransaction::class, 'agent_id');
+    }
+
+    /**
+     * Agent's commission payment records.
+     */
+    public function agentPayments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(AgentPaymentRecord::class, 'agent_id');
+    }
+
+    /**
+     * Check if this user is an agent.
+     */
+    public function isAgent(): bool
+    {
+        $role = $this->role;
+        return ($role instanceof \App\Enums\UserRole && $role === \App\Enums\UserRole::Agent) || $role === 'agent';
     }
 }

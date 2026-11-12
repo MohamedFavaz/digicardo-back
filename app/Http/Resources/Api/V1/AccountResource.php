@@ -18,6 +18,8 @@ class AccountResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
+            'mobile' => $this->mobile,
+            'avatar_url' => $this->avatar_url,
             'role' => $this->role instanceof \BackedEnum ? $this->role->value : (string) $this->role,
             'status' => $this->status instanceof \BackedEnum ? $this->status->value : (string) $this->status,
             'email_verified_at' => $this->email_verified_at?->toIso8601String(),

@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -16,7 +15,7 @@ return new class extends Migration
             $table->string('name', 100);
             $table->string('email', 255)->unique();
             $table->string('password', 255);
-            $table->enum('role', ['user', 'admin', 'moderator'])->default('user');
+            $table->enum('role', ['user', 'admin', 'moderator', 'agent'])->default('user');
             $table->enum('status', ['active', 'suspended', 'banned'])->default('active');
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();

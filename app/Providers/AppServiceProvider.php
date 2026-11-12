@@ -82,17 +82,18 @@ class AppServiceProvider extends ServiceProvider
             });
         });
 
-        // Dedicated Login Rate Limiter (5 attempts per minute per IP + email)
+        // Dedicated Login Rate Limiter (60 attempts per min in local/dev, 10 in production)
         RateLimiter::for('login', function (Request $request) {
             $email = strtolower(trim((string) $request->input('email')));
             $throttleKey = $email . '|' . $request->ip();
+            $maxAttempts = app()->environment('local', 'testing') ? 60 : 10;
 
-            return Limit::perMinute(5)->by($throttleKey)->response(function () {
+            return Limit::perMinute($maxAttempts)->by($throttleKey)->response(function () {
                 return response()->json([
                     'success' => false,
                     'error' => [
                         'code' => 'RATE_LIMITED',
-                        'message' => 'Too many login attempts. Please try again in a few minutes.',
+                        'message' => 'Too many login attempts. Please wait a minute and try again.',
                     ],
                 ], Response::HTTP_TOO_MANY_REQUESTS);
             });
