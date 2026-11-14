@@ -53,3 +53,4 @@ class AdminAgentCreationTest extends TestCase
         $this->assertEquals(200, $createdAgent->commissionConfig->agent_commission);
     }
 }
+

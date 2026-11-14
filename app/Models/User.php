@@ -73,11 +73,27 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the profile associated with the user.
+     * Get the primary profile associated with the user (backward compatible).
      */
     public function profile(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
-        return $this->hasOne(Profile::class);
+        return $this->hasOne(Profile::class)->orderBy('is_primary', 'desc');
+    }
+
+    /**
+     * Get all cards (profiles) owned by the user.
+     */
+    public function cards(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Profile::class)->orderBy('is_primary', 'desc')->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get the primary card for the user.
+     */
+    public function primaryCard(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Profile::class)->where('is_primary', true);
     }
 
     /**

@@ -120,6 +120,20 @@ Route::prefix('v1')->group(function () {
         Route::put('/profile/appearance', [ProfileController::class, 'updateAppearance'])->name('api.v1.profile.appearance.update');
         Route::patch('/profile/appearance', [ProfileController::class, 'updateAppearance']);
 
+        // Multi-Card Management Endpoints
+        Route::prefix('cards')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\V1\CardController::class, 'index'])->name('api.v1.cards.index');
+            Route::post('/', [\App\Http\Controllers\Api\V1\CardController::class, 'store'])->name('api.v1.cards.store');
+            Route::get('/{card}', [\App\Http\Controllers\Api\V1\CardController::class, 'show'])->name('api.v1.cards.show');
+            Route::patch('/{card}', [\App\Http\Controllers\Api\V1\CardController::class, 'update'])->name('api.v1.cards.update');
+            Route::put('/{card}', [\App\Http\Controllers\Api\V1\CardController::class, 'update']);
+            Route::delete('/{card}', [\App\Http\Controllers\Api\V1\CardController::class, 'destroy'])->name('api.v1.cards.destroy');
+            Route::post('/{card}/publish', [\App\Http\Controllers\Api\V1\CardController::class, 'publish'])->name('api.v1.cards.publish');
+            Route::post('/{card}/unpublish', [\App\Http\Controllers\Api\V1\CardController::class, 'unpublish'])->name('api.v1.cards.unpublish');
+            Route::post('/{card}/duplicate', [\App\Http\Controllers\Api\V1\CardController::class, 'duplicate'])->name('api.v1.cards.duplicate');
+            Route::post('/{card}/set-primary', [\App\Http\Controllers\Api\V1\CardController::class, 'setPrimary'])->name('api.v1.cards.set-primary');
+        });
+
         // Profile SEO & OpenGraph Endpoints
         Route::get('/profile/seo', [ProfileSeoController::class, 'show'])->name('api.v1.profile.seo.show');
         Route::patch('/profile/seo', [ProfileSeoController::class, 'update'])->name('api.v1.profile.seo.update');
