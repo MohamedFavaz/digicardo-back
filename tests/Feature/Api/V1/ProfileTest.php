@@ -285,7 +285,9 @@ class ProfileTest extends TestCase
         $this->assertStringNotContainsString($user->id, $payload);
         $this->assertArrayNotHasKey('user_id', $response->json('data'));
         $this->assertArrayNotHasKey('email', $response->json('data'));
-        $this->assertArrayNotHasKey('id', $response->json('data'));
+        // The profile's own ULID is public on purpose: the card sends it with analytics
+        // events (profile_id). It is not the user id, which must never be exposed.
+        $this->assertNotSame($user->id, $response->json('data.id'));
     }
 
     public function test_missing_public_profile_returns_404(): void

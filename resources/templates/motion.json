@@ -1,0 +1,42 @@
+{
+  "id": "motion",
+  "name": "Motion",
+  "description": "A modern animated card: a glowing intro, a 3D card that flips to its QR code, sections that glide in as you scroll, tap effects and a quick-contact button that fans out.",
+  "category": "Modern",
+  "sections": ["services", "products", "payments", "gallery", "links", "documents", "review", "qr"],
+  "default_theme": {
+    "color_background": "#0A0A14",
+    "color_surface": "#151522",
+    "color_text_primary": "#F5F5FA",
+    "color_text_secondary": "#A9A9C2",
+    "color_accent": "#8B5CF6",
+    "font_family": "outfit",
+    "button_radius": "large",
+    "button_style": "solid",
+    "animation": "fade"
+  },
+  "controls": [
+    {
+      "key": "motion",
+      "label": "Animation",
+      "type": "choice",
+      "default": "lively",
+      "options": [
+        { "value": "lively", "label": "Lively — parallax, 3D tilt, tap bursts" },
+        { "value": "subtle", "label": "Subtle — gentle fades only" }
+      ]
+    },
+    { "key": "aurora", "label": "Moving colour glow behind the top", "type": "toggle", "default": true },
+    { "key": "flip_card", "label": "3D card that flips to the QR code", "type": "toggle", "default": true },
+    { "key": "quick_menu", "label": "Floating quick-contact button", "type": "toggle", "default": true }
+  ],
+  "presets": [
+    { "id": "aurora", "name": "Aurora", "tokens": { "color_background": "#0A0A14", "color_surface": "#151522", "color_text_primary": "#F5F5FA", "color_text_secondary": "#A9A9C2", "color_accent": "#8B5CF6" } },
+    { "id": "ocean", "name": "Ocean", "tokens": { "color_background": "#06141B", "color_surface": "#0E2230", "color_text_primary": "#EEF7FB", "color_text_secondary": "#9FB8C6", "color_accent": "#22D3EE" } },
+    { "id": "ember", "name": "Ember", "tokens": { "color_background": "#140B08", "color_surface": "#22140F", "color_text_primary": "#FFF4EE", "color_text_secondary": "#C7A99B", "color_accent": "#FF7A3D" } },
+    { "id": "forest", "name": "Forest", "tokens": { "color_background": "#07130E", "color_surface": "#10221A", "color_text_primary": "#EEFAF3", "color_text_secondary": "#9DBFAE", "color_accent": "#34D399" } },
+    { "id": "gold", "name": "Gold", "tokens": { "color_background": "#0E0D0A", "color_surface": "#1B1914", "color_text_primary": "#FAF6EC", "color_text_secondary": "#BDB39A", "color_accent": "#E8B64C" } },
+    { "id": "mist", "name": "Mist", "tokens": { "color_background": "#F4F6FB", "color_surface": "#FFFFFF", "color_text_primary": "#0F172A", "color_text_secondary": "#475569", "color_accent": "#4F46E5" } },
+    { "id": "blush", "name": "Blush", "tokens": { "color_background": "#FFF7F9", "color_surface": "#FFFFFF", "color_text_primary": "#2A0F1A", "color_text_secondary": "#6E4A57", "color_accent": "#E11D74" } }
+  ]
+}

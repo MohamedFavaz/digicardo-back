@@ -28,4 +28,11 @@ return [
         'secret' => env('INTERNAL_SERVICE_SECRET'),
     ],
 
+    // On-demand revalidation of public profile pages on the Next.js frontend
+    // (POST {frontend_url}/api/revalidate). Leave the secret empty to disable.
+    'next' => [
+        'revalidate_secret' => env('NEXT_REVALIDATE_SECRET'),
+        'revalidate_timeout' => (int) env('NEXT_REVALIDATE_TIMEOUT', 3),
+    ],
+
 ];

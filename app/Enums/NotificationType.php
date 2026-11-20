@@ -16,4 +16,6 @@ enum NotificationType: string
     case DomainVerified = 'domain_verified';
     case DomainFailed = 'domain_failed';
     case SystemAlert = 'system_alert';
+    case AdminMessage = 'admin_message';
+    case AgentMessage = 'agent_message';
 }

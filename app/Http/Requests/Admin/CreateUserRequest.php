@@ -11,7 +11,7 @@ class CreateUserRequest extends BaseApiRequest
         return [
             'name'             => ['required', 'string', 'max:100'],
             'email'            => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'username'         => ['required', 'string', 'min:3', 'max:30', 'regex:/^[a-zA-Z0-9_-]+$/', 'unique:profiles,username'],
+            'username'         => ['required', 'string', 'min:3', 'max:30', 'regex:/^[a-zA-Z0-9_-]+$/', 'unique:profiles,username', \App\Services\UsernameService::notReservedRule()],
             // Password is optional — auto-generated securely if omitted
             'password'         => ['sometimes', 'nullable', 'string', 'min:8', 'max:100'],
             'role'             => ['sometimes', 'string', 'in:user,moderator,admin'],

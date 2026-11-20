@@ -106,7 +106,7 @@ class AdminUserManagementTest extends TestCase
         $response->assertStatus(200);
 
         $profile->refresh();
-        $this->assertEquals('suspended', $profile->moderation_status);
+        $this->assertSame(\App\Enums\ProfileModerationStatus::Suspended, $profile->moderation_status);
 
         // When user is suspended, the user created link is also suspended (returns 404)
         $this->getJson('/api/v1/p/creatorlink')->assertStatus(404);
@@ -118,7 +118,7 @@ class AdminUserManagementTest extends TestCase
         $reactivateResponse->assertStatus(200);
 
         $profile->refresh();
-        $this->assertEquals('active', $profile->moderation_status);
+        $this->assertSame(\App\Enums\ProfileModerationStatus::Active, $profile->moderation_status);
 
         // Once reactivated, the user created link is accessible again
         $this->getJson('/api/v1/p/creatorlink')->assertStatus(200);

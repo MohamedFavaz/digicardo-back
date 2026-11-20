@@ -33,7 +33,8 @@ class User extends Authenticatable
         'password',
         'role',
         'status',
-        'email_verified_at',
+        // email_verified_at is intentionally NOT fillable: set it with forceFill()/forceCreate()
+        // in trusted server code only (admin/agent provisioning, verification flow).
         'expires_at',
         'validity_months',
         'validity_label',
@@ -73,27 +74,11 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the primary profile associated with the user (backward compatible).
+     * Get the profile associated with the user.
      */
     public function profile(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
-        return $this->hasOne(Profile::class)->orderBy('is_primary', 'desc');
-    }
-
-    /**
-     * Get all cards (profiles) owned by the user.
-     */
-    public function cards(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(Profile::class)->orderBy('is_primary', 'desc')->orderBy('created_at', 'desc');
-    }
-
-    /**
-     * Get the primary card for the user.
-     */
-    public function primaryCard(): \Illuminate\Database\Eloquent\Relations\HasOne
-    {
-        return $this->hasOne(Profile::class)->where('is_primary', true);
+        return $this->hasOne(Profile::class);
     }
 
     /**
@@ -210,6 +195,14 @@ class User extends Authenticatable
     public function agentQuota(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(AgentQuota::class, 'agent_id');
+    }
+
+    /**
+     * This agent's landing page and (optional) domain.
+     */
+    public function agentSite(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(AgentSite::class, 'agent_id');
     }
 
     /**

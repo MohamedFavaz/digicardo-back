@@ -1,0 +1,30 @@
+{
+  "id": "showcase",
+  "name": "Showcase",
+  "description": "A business showcase: big action buttons, round contact icons, opening hours, photo gallery and a three-column layout on desktop.",
+  "category": "Business",
+  "sections": ["services", "products", "payments", "gallery", "links", "documents", "review", "qr"],
+  "default_theme": {
+    "color_background": "#F3F4FA",
+    "color_surface": "#FFFFFF",
+    "color_text_primary": "#1A1F36",
+    "color_text_secondary": "#5B6178",
+    "color_accent": "#2F3A9E",
+    "font_family": "poppins",
+    "button_radius": "medium",
+    "button_style": "solid",
+    "animation": "fade"
+  },
+  "controls": [
+    { "key": "cover_slideshow", "label": "Slide between cover photos", "type": "toggle", "default": true },
+    { "key": "floating_nav", "label": "Floating menu bar (Home, Social, Gallery, Products)", "type": "toggle", "default": true }
+  ],
+  "presets": [
+    { "id": "indigo", "name": "Indigo", "tokens": { "color_background": "#F3F4FA", "color_surface": "#FFFFFF", "color_text_primary": "#1A1F36", "color_text_secondary": "#5B6178", "color_accent": "#2F3A9E" } },
+    { "id": "emerald", "name": "Emerald", "tokens": { "color_background": "#F1F7F4", "color_surface": "#FFFFFF", "color_text_primary": "#13261D", "color_text_secondary": "#4B5F55", "color_accent": "#0F7A55" } },
+    { "id": "crimson", "name": "Crimson", "tokens": { "color_background": "#FAF3F4", "color_surface": "#FFFFFF", "color_text_primary": "#2A1418", "color_text_secondary": "#6B5257", "color_accent": "#B4233C" } },
+    { "id": "ocean", "name": "Ocean", "tokens": { "color_background": "#F1F6FB", "color_surface": "#FFFFFF", "color_text_primary": "#0F2233", "color_text_secondary": "#4A5D70", "color_accent": "#0B6BB8" } },
+    { "id": "charcoal", "name": "Charcoal", "tokens": { "color_background": "#F4F4F5", "color_surface": "#FFFFFF", "color_text_primary": "#18181B", "color_text_secondary": "#52525B", "color_accent": "#27272A" } },
+    { "id": "night", "name": "Night", "tokens": { "color_background": "#0D1020", "color_surface": "#161A2E", "color_text_primary": "#F4F5FA", "color_text_secondary": "#A3A8C3", "color_accent": "#6C7BFF" } }
+  ]
+}

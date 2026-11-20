@@ -24,7 +24,7 @@ class AgentService
     public function listAgents(array $filters = []): LengthAwarePaginator
     {
         $query = User::where('role', UserRole::Agent)
-            ->with(['agentQuota', 'commissionConfig']);
+            ->with(['agentQuota', 'commissionConfig', 'agentSite:id,agent_id,slug,domain,domain_status,published,landing_disabled']);
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];
@@ -50,7 +50,8 @@ class AgentService
     {
         return DB::transaction(function () use ($data) {
             // Create user with agent role
-            $agent = User::create([
+            // forceCreate: email_verified_at is not mass-assignable; admin-created agents start verified.
+            $agent = User::forceCreate([
                 'name' => $data['name'],
                 'email' => strtolower(trim($data['email'])),
                 'mobile' => !empty($data['mobile']) ? trim($data['mobile']) : null,

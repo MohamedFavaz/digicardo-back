@@ -93,7 +93,8 @@ class PublicProfileSeoTest extends TestCase
             'indexable' => true,
         ]);
 
-        $response = $this->getJson('/api/v1/internal/sitemap-profiles');
+        $response = $this->withHeaders(['x-internal-secret' => 'local-internal-service-secret'])
+            ->getJson('/api/v1/internal/sitemap-profiles');
 
         $response->assertStatus(Response::HTTP_OK)
             ->assertJsonPath('meta.count', 1)

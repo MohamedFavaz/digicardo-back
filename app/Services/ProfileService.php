@@ -16,11 +16,12 @@ class ProfileService
     /**
      * Templates available on the Free plan. All other templates require AdvancedTemplates entitlement.
      */
-    public const FREE_TEMPLATES = ['vcard', 'botanical'];
+    public const FREE_TEMPLATES = ['vcard', 'botanical', 'showcase', 'poster', 'motion'];
 
     public function __construct(
         protected FeatureEntitlementService $entitlementService,
-        protected PublicProfileCacheService $cacheService
+        protected PublicProfileCacheService $cacheService,
+        protected ThemeTokenSanitizer $themeSanitizer
     ) {}
 
     /**
@@ -34,14 +35,23 @@ class ProfileService
             return $profile;
         }
 
+        // Partner (agent) accounts make cards for customers; they don't get a public card of their
+        // own just because a customer-dashboard page asked for "my profile" (e.g. while switching
+        // back from "Customize card").
+        $role = $user->role instanceof \App\Enums\UserRole ? $user->role->value : (string) $user->role;
+        if ($role === 'agent') {
+            throw new NotFoundHttpException('Partner accounts do not have their own card.');
+        }
+
         // Auto-initialize default profile
         return DB::transaction(function () use ($user) {
-            $base = UsernameService::normalize($user->name ?: 'user');
+            $base = UsernameService::fromName($user->name ?: 'user');
             $candidate = $base;
-            $counter = 1;
+            $counter = 2;
 
             while (Profile::where('username', $candidate)->exists() || UsernameService::isReserved($candidate)) {
-                $candidate = $base . $counter;
+                $suffix = '-' . $counter;
+                $candidate = rtrim(substr($base, 0, 30 - strlen($suffix)), '-') . $suffix;
                 $counter++;
             }
 
@@ -49,19 +59,11 @@ class ProfileService
                 'user_id' => $user->id,
                 'username' => $candidate,
                 'display_name' => $user->name ?: 'Creator',
-                'bio' => 'Welcome to my page!',
+                // No placeholder bio: empty content is hidden on the card (ADR-030).
+                'bio' => null,
                 'template_id' => 'vcard',
-                'theme_tokens' => [
-                    'color_background' => '#f0f4f8',
-                    'color_surface' => '#ffffff',
-                    'color_text_primary' => '#1e293b',
-                    'color_text_secondary' => '#64748b',
-                    'color_accent' => '#f97316',
-                    'font_family' => 'poppins',
-                    'button_radius' => 'large',
-                    'button_style' => 'solid',
-                    'animation' => 'none',
-                ],
+                'theme_tokens' => TemplateService::APPROVED_TEMPLATES['vcard']['default_theme'],
+                'content' => CardContentSchema::starter($user->name ?: 'Creator'),
                 'is_public' => true,
                 'version' => 1,
             ]);
@@ -104,6 +106,7 @@ class ProfileService
                     'is_public' => $data['is_public'] ?? true,
                     'seo_title' => $data['seo_title'] ?? null,
                     'seo_description' => $data['seo_description'] ?? null,
+                    'content' => CardContentSchema::starter((string) ($data['display_name'] ?? $user->name ?? ''), $data['bio'] ?? null),
                     'version' => 1,
                 ]);
             });
@@ -179,10 +182,14 @@ class ProfileService
         $result = DB::transaction(function () use ($user, $profile, $data) {
             $lockedProfile = Profile::where('id', $profile->id)->lockForUpdate()->firstOrFail();
 
+            // Optimistic concurrency (AGENTS.md rule 8): a stale version means another tab or
+            // device saved first. The client reloads the current version and retries.
             $clientVersion = (int) ($data['version'] ?? 0);
             if ($clientVersion !== (int) $lockedProfile->version) {
-                // Auto-reconcile appearance version differences so the authenticated user's design edits are never blocked by 409 Conflict.
-                \Log::info("ProfileService: Auto-reconciling version difference ({$clientVersion} vs {$lockedProfile->version}) for profile {$lockedProfile->id}");
+                throw new ConflictException(
+                    'Your card was changed in another tab or device. Reload to get the latest version.',
+                    (int) $lockedProfile->version
+                );
             }
 
             if (isset($data['template_id'])) {
@@ -193,37 +200,40 @@ class ProfileService
                 $lockedProfile->template_id = $templateId;
             }
 
-            if (isset($data['theme_tokens'])) {
-                $lockedProfile->theme_tokens = $data['theme_tokens'];
+            if (isset($data['theme_tokens']) && is_array($data['theme_tokens'])) {
+                // Never persist the raw payload: unsafe URL schemes, non-hex colours and
+                // unknown top-level keys are removed here (AGENTS.md rule 3).
+                $templateDefaults = TemplateService::APPROVED_TEMPLATES[$lockedProfile->template_id]['default_theme'] ?? [];
+                $tokens = $this->themeSanitizer->sanitize($data['theme_tokens'], $templateDefaults, (string) $lockedProfile->template_id);
+                $lockedProfile->theme_tokens = $tokens;
 
-                // Synchronize custom avatar URL with the main profile avatar_url
-                $customOpts = $data['theme_tokens']['custom_options'] ?? [];
+                // Keep profiles.avatar_url / cover_url in sync — only with real web URLs.
+                // Converted cards keep identity in `content` (ADR-030); never sync from legacy options.
+                $customOpts = is_array($lockedProfile->content) ? [] : ($tokens['custom_options'] ?? []);
                 if (!empty($customOpts['remove_avatar'])) {
                     $lockedProfile->avatar_url = null;
-                } elseif (!empty($customOpts['profile_image_url'])) {
-                    $lockedProfile->avatar_url = $customOpts['profile_image_url'];
-                } elseif (!empty($customOpts['custom_avatar_url'])) {
-                    $lockedProfile->avatar_url = $customOpts['custom_avatar_url'];
+                } elseif ($this->themeSanitizer->isWebUrl($customOpts['profile_image_url'] ?? null)) {
+                    $lockedProfile->avatar_url = trim($customOpts['profile_image_url']);
+                } elseif ($this->themeSanitizer->isWebUrl($customOpts['custom_avatar_url'] ?? null)) {
+                    $lockedProfile->avatar_url = trim($customOpts['custom_avatar_url']);
                 }
 
-                // Synchronize custom banner/cover URL with the main profile cover_url
-                if (!empty($customOpts['banner_image_url'])) {
-                    $lockedProfile->cover_url = $customOpts['banner_image_url'];
+                if ($this->themeSanitizer->isWebUrl($customOpts['banner_image_url'] ?? null)) {
+                    $lockedProfile->cover_url = trim($customOpts['banner_image_url']);
                 } elseif (!empty($customOpts['banner_images']) && is_array($customOpts['banner_images'])) {
                     $firstBanner = reset($customOpts['banner_images']);
-                    if (!empty($firstBanner) && is_string($firstBanner)) {
-                        $lockedProfile->cover_url = $firstBanner;
+                    if ($this->themeSanitizer->isWebUrl($firstBanner)) {
+                        $lockedProfile->cover_url = trim($firstBanner);
                     }
                 }
 
-                // Synchronize display name override if provided
+                // Same limits as UpdateProfileRequest (display_name 100, bio 500).
                 if (!empty($customOpts['display_name_override']) && is_string($customOpts['display_name_override'])) {
-                    $lockedProfile->display_name = trim($customOpts['display_name_override']);
+                    $lockedProfile->display_name = mb_substr(trim($customOpts['display_name_override']), 0, 100);
                 }
 
-                // Synchronize bio override if provided
                 if (isset($customOpts['bio_override']) && is_string($customOpts['bio_override'])) {
-                    $lockedProfile->bio = trim($customOpts['bio_override']);
+                    $lockedProfile->bio = mb_substr(trim($customOpts['bio_override']), 0, 500);
                 }
             }
 
@@ -261,6 +271,7 @@ class ProfileService
                         $query->where('is_visible', true)->orderBy('sort_order', 'asc');
                     },
                     'primaryDomain',
+                    'ogImageMedia',
                     'user.subscriptions.plan',
                 ])
                 ->first();
@@ -268,7 +279,11 @@ class ProfileService
     }
 
     /**
-     * Retrieve aggregated public profile metrics for real-time template rendering.
+     * Aggregated public profile metrics, embedded in the cached public profile payload.
+     *
+     * Uses two grouped queries (daily rollups + raw events) plus one contact count instead
+     * of one query per metric, so a cache miss stays cheap. As before, each metric uses the
+     * larger of the daily rolled-up total and the raw event count.
      *
      * @param Profile $profile
      * @return array{views: int, clicks: int, actions: int, days_live: int, engage: int}
@@ -276,61 +291,61 @@ class ProfileService
     public function getPublicProfileStats(Profile $profile): array
     {
         return Cache::remember("profile_public_stats:{$profile->id}", 60, function () use ($profile) {
-            // 1. Profile Views
-            $viewType = \App\Enums\AnalyticsEventType::ProfileView->value;
-        $viewsFromDaily = (int) \App\Models\AnalyticsDailyMetric::where('profile_id', $profile->id)
-            ->where('event_type', $viewType)
-            ->sum('total_count');
-        $rawViews = (int) \App\Models\AnalyticsEvent::where('profile_id', $profile->id)
-            ->where('event_type', $viewType)
-            ->count();
-        $totalViews = max($viewsFromDaily, $rawViews);
+            $viewTypes = [\App\Enums\AnalyticsEventType::ProfileView->value];
+            $clickTypes = [
+                \App\Enums\AnalyticsEventType::LinkClick->value,
+                \App\Enums\AnalyticsEventType::SocialClick->value,
+                \App\Enums\AnalyticsEventType::CtaClick->value,
+                \App\Enums\AnalyticsEventType::ImageClick->value,
+            ];
+            $actionTypes = [
+                \App\Enums\AnalyticsEventType::CtaClick->value,
+                \App\Enums\AnalyticsEventType::WhatsAppClick->value,
+                \App\Enums\AnalyticsEventType::PhoneClick->value,
+                \App\Enums\AnalyticsEventType::EmailClick->value,
+                \App\Enums\AnalyticsEventType::BookingClick->value,
+            ];
+            $allTypes = array_values(array_unique(array_merge($viewTypes, $clickTypes, $actionTypes)));
 
-        // 2. Link & Block Clicks
-        $clickTypes = [
-            \App\Enums\AnalyticsEventType::LinkClick->value,
-            \App\Enums\AnalyticsEventType::SocialClick->value,
-            \App\Enums\AnalyticsEventType::CtaClick->value,
-            \App\Enums\AnalyticsEventType::ImageClick->value,
-        ];
-        $clicksFromDaily = (int) \App\Models\AnalyticsDailyMetric::where('profile_id', $profile->id)
-            ->whereIn('event_type', $clickTypes)
-            ->sum('total_count');
-        $rawClicks = (int) \App\Models\AnalyticsEvent::where('profile_id', $profile->id)
-            ->whereIn('event_type', $clickTypes)
-            ->count();
-        $totalClicks = max($clicksFromDaily, $rawClicks);
+            $daily = \App\Models\AnalyticsDailyMetric::query()
+                ->toBase()
+                ->where('profile_id', $profile->id)
+                ->whereIn('event_type', $allTypes)
+                ->groupBy('event_type')
+                ->selectRaw('event_type, SUM(total_count) as total')
+                ->pluck('total', 'event_type');
 
-        // 3. Actions (Direct communication/enquiry actions + contact form submissions)
-        $actionTypes = [
-            \App\Enums\AnalyticsEventType::CtaClick->value,
-            \App\Enums\AnalyticsEventType::WhatsAppClick->value,
-            \App\Enums\AnalyticsEventType::PhoneClick->value,
-            \App\Enums\AnalyticsEventType::EmailClick->value,
-            \App\Enums\AnalyticsEventType::BookingClick->value,
-        ];
-        $actionClicksFromDaily = (int) \App\Models\AnalyticsDailyMetric::where('profile_id', $profile->id)
-            ->whereIn('event_type', $actionTypes)
-            ->sum('total_count');
-        $rawActionClicks = (int) \App\Models\AnalyticsEvent::where('profile_id', $profile->id)
-            ->whereIn('event_type', $actionTypes)
-            ->count();
-        $contactCount = (int) \App\Models\ContactSubmission::where('profile_id', $profile->id)->count();
-        $totalActions = max($actionClicksFromDaily, $rawActionClicks) + $contactCount;
+            $raw = \App\Models\AnalyticsEvent::query()
+                ->toBase()
+                ->where('profile_id', $profile->id)
+                ->whereIn('event_type', $allTypes)
+                ->groupBy('event_type')
+                ->selectRaw('event_type, COUNT(*) as total')
+                ->pluck('total', 'event_type');
 
-        // 4. Days Live (difference in days since profile creation date, minimum 1)
-        $createdAt = $profile->created_at ? \Carbon\Carbon::parse($profile->created_at) : \Carbon\Carbon::now();
-        $daysLive = max(1, (int) $createdAt->diffInDays(\Carbon\Carbon::now()) + 1);
+            $sumFor = function ($totals, array $types): int {
+                $sum = 0;
+                foreach ($types as $type) {
+                    $sum += (int) ($totals[$type] ?? 0);
+                }
+                return $sum;
+            };
+            $metric = fn (array $types): int => max($sumFor($daily, $types), $sumFor($raw, $types));
 
-        // 5. Total Engagement
-        $totalEngage = $totalViews + $totalClicks + $totalActions;
+            $totalViews = $metric($viewTypes);
+            $totalClicks = $metric($clickTypes);
+            $contactCount = (int) \App\Models\ContactSubmission::where('profile_id', $profile->id)->count();
+            $totalActions = $metric($actionTypes) + $contactCount;
+
+            $createdAt = $profile->created_at ? \Carbon\Carbon::parse($profile->created_at) : \Carbon\Carbon::now();
+            $daysLive = max(1, (int) $createdAt->diffInDays(\Carbon\Carbon::now()) + 1);
 
             return [
                 'views' => $totalViews,
                 'clicks' => $totalClicks,
                 'actions' => $totalActions,
                 'days_live' => $daysLive,
-                'engage' => $totalEngage,
+                'engage' => $totalViews + $totalClicks + $totalActions,
             ];
         });
     }

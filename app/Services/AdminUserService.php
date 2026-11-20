@@ -353,7 +353,8 @@ class AdminUserService
                 }
             }
 
-            $user = User::create([
+            // forceCreate: email_verified_at is not mass-assignable; admin-created accounts start verified.
+            $user = User::forceCreate([
                 'name' => trim($data['name']),
                 'email' => strtolower(trim($data['email'])),
                 'password' => Hash::make($plainPassword),
@@ -368,26 +369,19 @@ class AdminUserService
 
             // Create initial profile
             $username = strtolower(trim($data['username']));
+            // Same start as a self-registered card: the Classic template's own colours, no
+            // placeholder bio, and real (empty) content so nothing legacy is shown.
             \App\Models\Profile::create([
                 'user_id' => $user->id,
                 'username' => $username,
                 'display_name' => $data['name'],
-                'bio' => 'Welcome to my Digicardo page!',
+                'bio' => null,
                 'template_id' => 'vcard',
                 'is_public' => true,
                 'moderation_status' => 'active',
                 'version' => 1,
-                'theme_tokens' => [
-                    'color_background' => '#090d16',
-                    'color_surface' => '#111827',
-                    'color_text_primary' => '#f9fafb',
-                    'color_text_secondary' => '#9ca3af',
-                    'color_accent' => '#6366f1',
-                    'font_family' => 'inter',
-                    'button_radius' => 'medium',
-                    'button_style' => 'solid',
-                    'animation' => 'fade',
-                ],
+                'theme_tokens' => TemplateService::APPROVED_TEMPLATES['vcard']['default_theme'],
+                'content' => CardContentSchema::starter(trim($data['name'])),
             ]);
 
             // Record sale for revenue tracking
@@ -779,8 +773,11 @@ class AdminUserService
                 ];
             }
 
-            // Fallback to active administrator account
-            $admin = User::where('role', 'admin')->where('status', 'active')->first();
+            // Not impersonating anyone: there is no account to restore. (This used to fall back to
+            // "the first active administrator", which signed any caller in as an admin.)
+            throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException(
+                'You are not viewing another account, so there is nothing to go back to.'
+            );
         }
 
         if (!$admin) {

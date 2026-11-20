@@ -1,0 +1,29 @@
+{
+  "id": "vcard",
+  "name": "Classic",
+  "description": "A clean business card: cover photo, big contact buttons, services, shop, payments and photos.",
+  "category": "Business",
+  "sections": ["services", "products", "payments", "gallery", "links", "documents", "review", "qr"],
+  "default_theme": {
+    "color_background": "#FAFAF8",
+    "color_surface": "#FFFFFF",
+    "color_text_primary": "#18181B",
+    "color_text_secondary": "#52525B",
+    "color_accent": "#0F766E",
+    "font_family": "inter",
+    "button_radius": "large",
+    "button_style": "solid",
+    "animation": "none"
+  },
+  "controls": [
+    { "key": "cover_slideshow", "label": "Slide between cover photos", "type": "toggle", "default": true }
+  ],
+  "presets": [
+    { "id": "teal", "name": "Teal", "tokens": { "color_background": "#FAFAF8", "color_surface": "#FFFFFF", "color_text_primary": "#18181B", "color_text_secondary": "#52525B", "color_accent": "#0F766E" } },
+    { "id": "ocean", "name": "Ocean", "tokens": { "color_background": "#F7F9FC", "color_surface": "#FFFFFF", "color_text_primary": "#0F172A", "color_text_secondary": "#475569", "color_accent": "#1D4ED8" } },
+    { "id": "sunset", "name": "Sunset", "tokens": { "color_background": "#FBF8F5", "color_surface": "#FFFFFF", "color_text_primary": "#1C1917", "color_text_secondary": "#57534E", "color_accent": "#C2410C" } },
+    { "id": "violet", "name": "Violet", "tokens": { "color_background": "#FAFAFB", "color_surface": "#FFFFFF", "color_text_primary": "#18181B", "color_text_secondary": "#52525B", "color_accent": "#5B3FE4" } },
+    { "id": "graphite", "name": "Graphite", "tokens": { "color_background": "#F7F7F8", "color_surface": "#FFFFFF", "color_text_primary": "#18181B", "color_text_secondary": "#52525B", "color_accent": "#27272A" } },
+    { "id": "midnight", "name": "Midnight", "tokens": { "color_background": "#0E1117", "color_surface": "#171B24", "color_text_primary": "#F4F4F5", "color_text_secondary": "#A1A1AA", "color_accent": "#5EEAD4" } }
+  ]
+}

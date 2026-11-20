@@ -45,7 +45,8 @@ class PlanEnforcementTest extends TestCase
         $response->assertStatus(409);
     }
 
-    public function test_free_user_cannot_register_a_custom_domain(): void
+    /** PLATFORM POLICY: all features unlocked (FeatureEntitlementService). */
+    public function test_free_user_can_register_a_custom_domain_under_platform_policy(): void
     {
         $user = User::factory()->create();
         $profile = Profile::create([
@@ -61,11 +62,8 @@ class PlanEnforcementTest extends TestCase
             'domain' => 'mydomain.com',
         ]);
 
-        $response->assertStatus(403)
-            ->assertJsonPath('success', false)
-            ->assertJsonPath('error.code', 'FEATURE_LIMIT_REACHED')
-            ->assertJsonPath('error.details.feature', 'custom_domain_count')
-            ->assertJsonPath('error.details.limit', 0);
+        $response->assertStatus(201)
+            ->assertJsonPath('success', true);
     }
 
     public function test_pro_user_can_register_custom_domain_within_limit(): void
@@ -98,7 +96,8 @@ class PlanEnforcementTest extends TestCase
             ->assertJsonPath('data.normalized_domain', 'probrand.io');
     }
 
-    public function test_free_user_cannot_create_gallery_video_music_or_booking_blocks(): void
+    /** PLATFORM POLICY: all block types are available to every user. */
+    public function test_free_user_can_create_gallery_video_music_and_booking_blocks(): void
     {
         $user = User::factory()->create();
         $profile = Profile::create([
@@ -133,10 +132,9 @@ class PlanEnforcementTest extends TestCase
                 'config' => $config,
             ]);
 
-            $response->assertStatus(403)
-                ->assertJsonPath('success', false)
-                ->assertJsonPath('error.code', 'FEATURE_NOT_AVAILABLE')
-                ->assertJsonPath('error.details.feature', "{$type}_blocks");
+            $response->assertStatus(201)
+                ->assertJsonPath('success', true)
+                ->assertJsonPath('data.type', $type);
         }
     }
 
@@ -175,7 +173,8 @@ class PlanEnforcementTest extends TestCase
             ->assertJsonPath('data.type', 'video');
     }
 
-    public function test_free_user_cannot_select_advanced_template(): void
+    /** Only templates in TemplateService::APPROVED_TEMPLATES can be selected. */
+    public function test_unknown_template_is_rejected(): void
     {
         $user = User::factory()->create();
         $profile = Profile::create([
@@ -192,13 +191,13 @@ class PlanEnforcementTest extends TestCase
             'version' => 1,
         ]);
 
-        $response->assertStatus(403)
+        $response->assertStatus(422)
             ->assertJsonPath('success', false)
-            ->assertJsonPath('error.code', 'FEATURE_NOT_AVAILABLE')
-            ->assertJsonPath('error.details.feature', 'advanced_templates');
+            ->assertJsonPath('error.code', 'VALIDATION_ERROR');
     }
 
-    public function test_pro_user_can_select_advanced_template(): void
+    /** Both approved templates are free (ProfileService::FREE_TEMPLATES). */
+    public function test_any_user_can_select_every_approved_template(): void
     {
         $user = User::factory()->create();
         $proPlan = Plan::where('code', 'pro')->firstOrFail();
@@ -220,16 +219,25 @@ class PlanEnforcementTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)->putJson('/api/v1/profile/appearance', [
-            'template_id' => 'gradient',
+            'template_id' => 'botanical',
             'version' => 1,
         ]);
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.template_id', 'gradient');
+            ->assertJsonPath('data.template_id', 'botanical');
+
+        $response = $this->actingAs($user)->putJson('/api/v1/profile/appearance', [
+            'template_id' => 'vcard',
+            'version' => 2,
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.template_id', 'vcard');
     }
 
-    public function test_branding_is_mandatory_for_free_and_removable_for_pro(): void
+    /** PLATFORM POLICY: any user may hide the Digicardo badge. */
+    public function test_any_user_can_hide_branding_under_platform_policy(): void
     {
         // Free user
         $freeUser = User::factory()->create();
@@ -245,7 +253,7 @@ class PlanEnforcementTest extends TestCase
 
         $freeRes = $this->getJson("/api/v1/p/{$freeProfile->username}");
         $freeRes->assertStatus(200)
-            ->assertJsonPath('data.show_branding', true); // Free user cannot hide branding
+            ->assertJsonPath('data.show_branding', false);
 
         // Pro user
         $proUser = User::factory()->create();

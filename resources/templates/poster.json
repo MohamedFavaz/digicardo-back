@@ -1,0 +1,237 @@
+{
+  "id": "poster",
+  "name": "Poster",
+  "description": "A bold shop poster for any shop: your product photo or a ready-made picture, your name in giant letters and glossy tap icons for WhatsApp, delivery apps and socials.",
+  "category": "Business",
+  "sections": [
+    "services",
+    "products",
+    "payments",
+    "gallery",
+    "links",
+    "documents",
+    "review",
+    "qr"
+  ],
+  "default_theme": {
+    "color_background": "#F7F08A",
+    "color_surface": "#FFFFFF",
+    "color_text_primary": "#3A0718",
+    "color_text_secondary": "#6B1F35",
+    "color_accent": "#D90D52",
+    "font_family": "poppins",
+    "button_radius": "large",
+    "button_style": "solid",
+    "animation": "fade"
+  },
+  "controls": [
+    {
+      "key": "art",
+      "label": "Poster picture",
+      "type": "choice",
+      "default": "photo",
+      "options": [
+        {
+          "value": "photo",
+          "label": "Your photo"
+        },
+        {
+          "value": "ice-cream",
+          "label": "Ice cream",
+          "image": "/poster-art/ice-cream.svg"
+        },
+        {
+          "value": "shoe",
+          "label": "Shoes",
+          "image": "/poster-art/shoe.svg"
+        },
+        {
+          "value": "burger",
+          "label": "Burger",
+          "image": "/poster-art/burger.svg"
+        },
+        {
+          "value": "pizza",
+          "label": "Pizza",
+          "image": "/poster-art/pizza.svg"
+        },
+        {
+          "value": "biryani",
+          "label": "Biryani",
+          "image": "/poster-art/biryani.svg"
+        },
+        {
+          "value": "coffee",
+          "label": "Coffee",
+          "image": "/poster-art/coffee.svg"
+        },
+        {
+          "value": "cake",
+          "label": "Cake",
+          "image": "/poster-art/cake.svg"
+        },
+        {
+          "value": "juice",
+          "label": "Juice",
+          "image": "/poster-art/juice.svg"
+        },
+        {
+          "value": "flowers",
+          "label": "Flowers",
+          "image": "/poster-art/flowers.svg"
+        },
+        {
+          "value": "pharmacy",
+          "label": "Pharmacy",
+          "image": "/poster-art/pharmacy.svg"
+        },
+        {
+          "value": "fashion",
+          "label": "Fashion",
+          "image": "/poster-art/fashion.svg"
+        },
+        {
+          "value": "phone",
+          "label": "Mobiles",
+          "image": "/poster-art/phone.svg"
+        },
+        {
+          "value": "grocery",
+          "label": "Grocery",
+          "image": "/poster-art/grocery.svg"
+        },
+        {
+          "value": "salon",
+          "label": "Salon",
+          "image": "/poster-art/salon.svg"
+        }
+      ]
+    },
+    {
+      "key": "curtain",
+      "label": "Open like a curtain when scrolling",
+      "type": "toggle",
+      "default": true
+    },
+    {
+      "key": "big_name",
+      "label": "Show the name in giant letters",
+      "type": "toggle",
+      "default": true
+    },
+    {
+      "key": "wave",
+      "label": "Wavy two-colour background",
+      "type": "toggle",
+      "default": true
+    },
+    {
+      "key": "bubbles",
+      "label": "Floating bubbles",
+      "type": "toggle",
+      "default": true
+    },
+    {
+      "key": "frame_from",
+      "label": "Icon frame — light",
+      "type": "color",
+      "default": "#FFE45C"
+    },
+    {
+      "key": "frame_to",
+      "label": "Icon frame — dark",
+      "type": "color",
+      "default": "#FF8A1F"
+    }
+  ],
+  "presets": [
+    {
+      "id": "ice-cream",
+      "name": "Ice cream",
+      "tokens": {
+        "color_background": "#F7F08A",
+        "color_surface": "#FFFFFF",
+        "color_text_primary": "#3A0718",
+        "color_text_secondary": "#6B1F35",
+        "color_accent": "#D90D52"
+      }
+    },
+    {
+      "id": "bakery",
+      "name": "Bakery",
+      "tokens": {
+        "color_background": "#FCEBD2",
+        "color_surface": "#FFFFFF",
+        "color_text_primary": "#3B2210",
+        "color_text_secondary": "#6B4A33",
+        "color_accent": "#8A4B23"
+      }
+    },
+    {
+      "id": "juice",
+      "name": "Juice bar",
+      "tokens": {
+        "color_background": "#E6F7B0",
+        "color_surface": "#FFFFFF",
+        "color_text_primary": "#26310A",
+        "color_text_secondary": "#4A5A1C",
+        "color_accent": "#EA580C"
+      }
+    },
+    {
+      "id": "cafe",
+      "name": "Café",
+      "tokens": {
+        "color_background": "#EADBC8",
+        "color_surface": "#FFFFFF",
+        "color_text_primary": "#2B1A10",
+        "color_text_secondary": "#5C4033",
+        "color_accent": "#4B2E1F"
+      }
+    },
+    {
+      "id": "florist",
+      "name": "Florist",
+      "tokens": {
+        "color_background": "#FCE4EC",
+        "color_surface": "#FFFFFF",
+        "color_text_primary": "#2A1A20",
+        "color_text_secondary": "#5B3A47",
+        "color_accent": "#2E7D4F"
+      }
+    },
+    {
+      "id": "pharmacy",
+      "name": "Pharmacy",
+      "tokens": {
+        "color_background": "#DDF4EE",
+        "color_surface": "#FFFFFF",
+        "color_text_primary": "#0B2E2A",
+        "color_text_secondary": "#2F5B55",
+        "color_accent": "#0F766E"
+      }
+    },
+    {
+      "id": "fashion",
+      "name": "Fashion",
+      "tokens": {
+        "color_background": "#F2EEE6",
+        "color_surface": "#FFFFFF",
+        "color_text_primary": "#111111",
+        "color_text_secondary": "#4A4A4A",
+        "color_accent": "#111111"
+      }
+    },
+    {
+      "id": "electronics",
+      "name": "Electronics",
+      "tokens": {
+        "color_background": "#DCE8FF",
+        "color_surface": "#FFFFFF",
+        "color_text_primary": "#0F1B3D",
+        "color_text_secondary": "#33415C",
+        "color_accent": "#1E3A8A"
+      }
+    }
+  ]
+}

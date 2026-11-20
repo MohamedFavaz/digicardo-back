@@ -21,6 +21,11 @@ class AppServiceProvider extends ServiceProvider
         );
 
         $this->app->bind(
+            \App\Contracts\AgentDomainDnsCheckerInterface::class,
+            \App\Services\AgentDomainDnsChecker::class
+        );
+
+        $this->app->bind(
             \App\Contracts\CustomHostnameProviderInterface::class,
             function () {
                 if (env('CLOUDFLARE_API_TOKEN') && env('CLOUDFLARE_ZONE_ID')) {
@@ -134,6 +139,19 @@ class AppServiceProvider extends ServiceProvider
                     'error' => [
                         'code' => 'RATE_LIMITED',
                         'message' => 'Too many verification email requests. Please wait a few minutes before trying again.',
+                    ],
+                ], Response::HTTP_TOO_MANY_REQUESTS);
+            });
+        });
+
+        // Admin/agent message sending (10 per minute per sender) — guards against accidental repeats.
+        RateLimiter::for('broadcast', function (Request $request) {
+            return Limit::perMinute(10)->by('broadcast|' . ($request->user()?->id ?: $request->ip()))->response(function () {
+                return response()->json([
+                    'success' => false,
+                    'error' => [
+                        'code' => 'RATE_LIMITED',
+                        'message' => 'You are sending messages too quickly. Please wait a minute and try again.',
                     ],
                 ], Response::HTTP_TOO_MANY_REQUESTS);
             });

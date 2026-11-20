@@ -17,6 +17,29 @@ class AgentCardController extends Controller
     ) {
     }
 
+    /** The agent's live domain, or null while their cards use the main domain. */
+    private function agentDomain(\App\Models\User $agent): ?string
+    {
+        $site = \App\Models\AgentSite::where('agent_id', $agent->id)->first();
+
+        return $site && $site->hasActiveDomain() ? $site->domain : null;
+    }
+
+    /**
+     * The card plus `public_url`: where its card actually opens (the agent's domain once it is
+     * live, otherwise the main site), so the portal never has to guess an address.
+     *
+     * @return array<string, mixed>
+     */
+    private function withPublicUrl(AgentCard $card, ?string $domain): array
+    {
+        $username = $card->profile?->username;
+
+        return $card->toArray() + [
+            'public_url' => $username ? app(\App\Services\AgentSiteService::class)->cardUrlFor($username, $domain) : null,
+        ];
+    }
+
     /**
      * List agent's own cards with pagination, search, and filtering.
      */
@@ -30,9 +53,11 @@ class AgentCardController extends Controller
             'per_page' => $request->query('per_page', 15),
         ]);
 
+        $domain = $this->agentDomain($agent);
+
         return response()->json([
             'success' => true,
-            'data' => $cards->items(),
+            'data' => array_map(fn (AgentCard $card) => $this->withPublicUrl($card, $domain), $cards->items()),
             'meta' => [
                 'current_page' => $cards->currentPage(),
                 'last_page' => $cards->lastPage(),
@@ -54,7 +79,7 @@ class AgentCardController extends Controller
             'customer_name' => 'required|string|min:2|max:150',
             'customer_email' => 'required|email|unique:users,email',
             'customer_phone' => 'nullable|string|max:20',
-            'username' => 'required|string|min:3|max:30|regex:/^[a-z0-9_-]+$/|unique:profiles,username',
+            'username' => ['required', 'string', 'min:3', 'max:30', 'regex:/^[a-z0-9_-]+$/', 'unique:profiles,username', \App\Services\UsernameService::notReservedRule()],
             'display_name' => 'sometimes|string|min:2|max:150',
             'card_name' => 'sometimes|string|max:150',
             'bio' => 'nullable|string|max:500',
@@ -65,10 +90,11 @@ class AgentCardController extends Controller
 
         try {
             $card = $this->cardService->createCard($agent, $validated);
+            $card->loadMissing('profile');
 
             return response()->json([
                 'success' => true,
-                'data' => $card,
+                'data' => $this->withPublicUrl($card, $this->agentDomain($agent)),
                 'message' => 'Digital card created successfully.',
             ], Response::HTTP_CREATED);
         } catch (\RuntimeException $e) {

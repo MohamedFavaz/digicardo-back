@@ -45,16 +45,17 @@ class CreateAdminCommand extends Command
         $user = User::where('email', $email)->first();
 
         if ($user) {
-            $user->update([
+            // forceFill/forceCreate: email_verified_at is deliberately not mass-assignable.
+            $user->forceFill([
                 'name' => $name,
                 'password' => Hash::make($password),
                 'role' => 'admin',
                 'status' => 'active',
                 'email_verified_at' => now(),
-            ]);
+            ])->save();
             $this->info("✓ Successfully promoted existing user [{$email}] to Super Administrator.");
         } else {
-            User::create([
+            User::forceCreate([
                 'id' => (string) Str::ulid(),
                 'name' => $name,
                 'email' => $email,

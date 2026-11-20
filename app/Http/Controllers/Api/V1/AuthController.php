@@ -26,10 +26,11 @@ class AuthController extends Controller
      */
     public function register(RegisterRequest $request): JsonResponse
     {
-        if (env('ALLOW_PUBLIC_REGISTRATION', true) === false) {
+        if (!config('app.allow_public_registration', true)) {
             return $this->errorResponse(
                 'PUBLIC_REGISTRATION_DISABLED',
                 'Public registration is disabled. Digicardo accounts are provisioned exclusively by platform administrators.',
+                null,
                 Response::HTTP_FORBIDDEN
             );
         }
@@ -38,7 +39,8 @@ class AuthController extends Controller
 
         return $this->successResponse(
             new UserResource($user),
-            ['message' => 'Registration successful.']
+            ['message' => 'Registration successful.'],
+            Response::HTTP_CREATED
         );
     }
 

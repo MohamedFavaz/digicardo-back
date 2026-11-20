@@ -27,10 +27,14 @@ class ProfileResource extends JsonResource
             'cover_url' => $this->cover_url,
             'template_id' => $this->template_id,
             'theme_tokens' => $this->theme_tokens,
+            'content' => is_array($this->content) ? \App\Services\CardContentSchema::normalize($this->content) : null,
             'is_public' => (bool) $this->is_public,
             'seo_title' => $this->seo_title,
             'seo_description' => $this->seo_description,
             'version' => (int) $this->version,
+            // Set when the card was made by an agent with an active domain: the card's link is
+            // https://{agent_domain}/{username} (QR codes, NFC files and share links use it).
+            'agent_domain' => app(\App\Services\AgentSiteService::class)->activeDomainForUser($this->user),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

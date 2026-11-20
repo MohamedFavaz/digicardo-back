@@ -55,6 +55,12 @@ Route::prefix('v1')->group(function () {
     Route::post('/p/{username}/report', [\App\Http\Controllers\Api\V1\PublicReportController::class, 'submit'])
         ->middleware('throttle:10,1');
 
+    // Public agent landing pages + their enquiry form
+    Route::get('/public/partners/{slug}', [\App\Http\Controllers\Api\V1\PublicPartnerController::class, 'show'])->name('api.v1.public.partners.show');
+    Route::post('/public/partners/{slug}/leads', [\App\Http\Controllers\Api\V1\PublicPartnerController::class, 'lead'])
+        ->middleware('throttle:6,10')
+        ->name('api.v1.public.partners.leads');
+
     // Public Analytics Event Ingestion Endpoint (Lightweight Beacon)
     Route::post('/analytics/events', [AnalyticsController::class, 'ingest'])
         ->name('api.v1.analytics.events');
@@ -116,23 +122,13 @@ Route::prefix('v1')->group(function () {
         Route::delete('/profile/cover', [MediaController::class, 'deleteCover'])->name('api.v1.profile.cover.delete');
 
         // Profile Appearance (Template & Theme) Endpoints
+        // Card editor (ADR-018): one load call + per-part content saves
+        Route::get('/profile/editor', [\App\Http\Controllers\Api\V1\ProfileEditorController::class, 'show'])->name('api.v1.profile.editor.show');
+        Route::patch('/profile/content', [\App\Http\Controllers\Api\V1\ProfileContentController::class, 'update'])->name('api.v1.profile.content.update');
+
         Route::get('/profile/appearance', [ProfileController::class, 'getAppearance'])->name('api.v1.profile.appearance.get');
         Route::put('/profile/appearance', [ProfileController::class, 'updateAppearance'])->name('api.v1.profile.appearance.update');
         Route::patch('/profile/appearance', [ProfileController::class, 'updateAppearance']);
-
-        // Multi-Card Management Endpoints
-        Route::prefix('cards')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Api\V1\CardController::class, 'index'])->name('api.v1.cards.index');
-            Route::post('/', [\App\Http\Controllers\Api\V1\CardController::class, 'store'])->name('api.v1.cards.store');
-            Route::get('/{card}', [\App\Http\Controllers\Api\V1\CardController::class, 'show'])->name('api.v1.cards.show');
-            Route::patch('/{card}', [\App\Http\Controllers\Api\V1\CardController::class, 'update'])->name('api.v1.cards.update');
-            Route::put('/{card}', [\App\Http\Controllers\Api\V1\CardController::class, 'update']);
-            Route::delete('/{card}', [\App\Http\Controllers\Api\V1\CardController::class, 'destroy'])->name('api.v1.cards.destroy');
-            Route::post('/{card}/publish', [\App\Http\Controllers\Api\V1\CardController::class, 'publish'])->name('api.v1.cards.publish');
-            Route::post('/{card}/unpublish', [\App\Http\Controllers\Api\V1\CardController::class, 'unpublish'])->name('api.v1.cards.unpublish');
-            Route::post('/{card}/duplicate', [\App\Http\Controllers\Api\V1\CardController::class, 'duplicate'])->name('api.v1.cards.duplicate');
-            Route::post('/{card}/set-primary', [\App\Http\Controllers\Api\V1\CardController::class, 'setPrimary'])->name('api.v1.cards.set-primary');
-        });
 
         // Profile SEO & OpenGraph Endpoints
         Route::get('/profile/seo', [ProfileSeoController::class, 'show'])->name('api.v1.profile.seo.show');
@@ -255,6 +251,9 @@ Route::prefix('v1')->group(function () {
             // User Management
             Route::get('/users', [\App\Http\Controllers\Api\V1\Admin\AdminUserController::class, 'index'])->name('api.v1.admin.users.index');
             Route::post('/users', [\App\Http\Controllers\Api\V1\Admin\AdminUserController::class, 'store'])->name('api.v1.admin.users.store');
+            // Fixed paths must come before /users/{id}, or "expiring" is treated as a user id (404).
+            Route::get('/users/expiring', [\App\Http\Controllers\Api\V1\Admin\AdminExpiryController::class, 'expiring'])->name('api.v1.admin.users.expiring');
+            Route::get('/users/expired', [\App\Http\Controllers\Api\V1\Admin\AdminExpiryController::class, 'expired'])->name('api.v1.admin.users.expired');
             Route::get('/users/{id}', [\App\Http\Controllers\Api\V1\Admin\AdminUserController::class, 'show'])->name('api.v1.admin.users.show');
             Route::patch('/users/{id}/status', [\App\Http\Controllers\Api\V1\Admin\AdminUserController::class, 'updateStatus'])->name('api.v1.admin.users.status');
             Route::patch('/users/{id}/role', [\App\Http\Controllers\Api\V1\Admin\AdminUserController::class, 'updateRole'])->name('api.v1.admin.users.role');
@@ -277,8 +276,6 @@ Route::prefix('v1')->group(function () {
 
             // ── Validity & Expiry Management ──────────────────────────────────────────
             Route::post('/users/{id}/renew', [\App\Http\Controllers\Api\V1\Admin\AdminUserController::class, 'renew'])->name('api.v1.admin.users.renew');
-            Route::get('/users/expiring', [\App\Http\Controllers\Api\V1\Admin\AdminExpiryController::class, 'expiring'])->name('api.v1.admin.users.expiring');
-            Route::get('/users/expired', [\App\Http\Controllers\Api\V1\Admin\AdminExpiryController::class, 'expired'])->name('api.v1.admin.users.expired');
 
             // ── Validity Plans (Settings > Plan Prices) ───────────────────────────────
             Route::get('/validity-plans', [\App\Http\Controllers\Api\V1\Admin\AdminValidityPlanController::class, 'index'])->name('api.v1.admin.validity-plans.index');
@@ -300,6 +297,17 @@ Route::prefix('v1')->group(function () {
             Route::patch('/access-requests/{id}/review', [\App\Http\Controllers\Api\V1\AccessRequestController::class, 'review'])->name('api.v1.admin.access-requests.review');
             Route::delete('/access-requests/{id}', [\App\Http\Controllers\Api\V1\AccessRequestController::class, 'destroy'])->name('api.v1.admin.access-requests.destroy');
 
+            // ── Admin Messages (broadcast notifications) ─────────────────────────
+            Route::prefix('broadcasts')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Api\V1\Admin\AdminBroadcastController::class, 'index'])->name('api.v1.admin.broadcasts.index');
+                Route::get('/audiences', [\App\Http\Controllers\Api\V1\Admin\AdminBroadcastController::class, 'audiences'])->name('api.v1.admin.broadcasts.audiences');
+                Route::get('/recipients', [\App\Http\Controllers\Api\V1\Admin\AdminBroadcastController::class, 'recipients'])->name('api.v1.admin.broadcasts.recipients');
+                Route::post('/', [\App\Http\Controllers\Api\V1\Admin\AdminBroadcastController::class, 'store'])
+                    ->middleware('throttle:broadcast')
+                    ->name('api.v1.admin.broadcasts.store');
+                Route::delete('/{id}', [\App\Http\Controllers\Api\V1\Admin\AdminBroadcastController::class, 'destroy'])->name('api.v1.admin.broadcasts.destroy');
+            });
+
             // ── Admin Agent Management ─────────────────────────────────────────────
             Route::prefix('agents')->group(function () {
                 Route::get('/', [\App\Http\Controllers\Api\V1\Admin\AdminAgentController::class, 'index'])->name('api.v1.admin.agents.index');
@@ -311,6 +319,16 @@ Route::prefix('v1')->group(function () {
                 Route::delete('/{id}', [\App\Http\Controllers\Api\V1\Admin\AdminAgentController::class, 'destroy'])->name('api.v1.admin.agents.destroy');
                 Route::post('/{id}/activate', [\App\Http\Controllers\Api\V1\Admin\AdminAgentController::class, 'activate'])->name('api.v1.admin.agents.activate');
                 Route::post('/{id}/deactivate', [\App\Http\Controllers\Api\V1\Admin\AdminAgentController::class, 'deactivate'])->name('api.v1.admin.agents.deactivate');
+            });
+
+            // ── Admin Agent Sites (domain + landing page) ──────────────────────────
+            Route::prefix('agents/{id}/site')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Api\V1\Admin\AdminAgentSiteController::class, 'show'])->name('api.v1.admin.agents.site.show');
+                Route::put('/domain', [\App\Http\Controllers\Api\V1\Admin\AdminAgentSiteController::class, 'setDomain'])->name('api.v1.admin.agents.site.domain');
+                Route::post('/domain/check', [\App\Http\Controllers\Api\V1\Admin\AdminAgentSiteController::class, 'checkDomain'])->name('api.v1.admin.agents.site.domain.check');
+                Route::post('/domain/activate', [\App\Http\Controllers\Api\V1\Admin\AdminAgentSiteController::class, 'activateDomain'])->name('api.v1.admin.agents.site.domain.activate');
+                Route::delete('/domain', [\App\Http\Controllers\Api\V1\Admin\AdminAgentSiteController::class, 'removeDomain'])->name('api.v1.admin.agents.site.domain.remove');
+                Route::patch('/landing', [\App\Http\Controllers\Api\V1\Admin\AdminAgentSiteController::class, 'setLanding'])->name('api.v1.admin.agents.site.landing');
             });
 
             // ── Admin Agent Cards ──────────────────────────────────────────────────
@@ -389,6 +407,29 @@ Route::prefix('v1')->group(function () {
             Route::post('/{id}/unpublish', [\App\Http\Controllers\Api\V1\Agent\AgentCardController::class, 'unpublish'])->name('api.v1.agent.cards.unpublish');
             Route::post('/{id}/impersonate', [\App\Http\Controllers\Api\V1\Agent\AgentCardController::class, 'impersonate'])->name('api.v1.agent.cards.impersonate');
         });
+
+        // Agent Messages (to the customers this agent created)
+        Route::prefix('messages')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\V1\Agent\AgentMessageController::class, 'index'])->name('api.v1.agent.messages.index');
+            Route::get('/recipients', [\App\Http\Controllers\Api\V1\Agent\AgentMessageController::class, 'recipients'])->name('api.v1.agent.messages.recipients');
+            Route::post('/', [\App\Http\Controllers\Api\V1\Agent\AgentMessageController::class, 'store'])
+                ->middleware('throttle:broadcast')
+                ->name('api.v1.agent.messages.store');
+            Route::delete('/{id}', [\App\Http\Controllers\Api\V1\Agent\AgentMessageController::class, 'destroy'])->name('api.v1.agent.messages.destroy');
+        });
+
+        // Agent landing page + leads
+        Route::prefix('site')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\V1\Agent\AgentSiteController::class, 'show'])->name('api.v1.agent.site.show');
+            Route::put('/', [\App\Http\Controllers\Api\V1\Agent\AgentSiteController::class, 'update'])->name('api.v1.agent.site.update');
+            Route::post('/publish', [\App\Http\Controllers\Api\V1\Agent\AgentSiteController::class, 'publish'])->name('api.v1.agent.site.publish');
+            Route::post('/images', [\App\Http\Controllers\Api\V1\Agent\AgentSiteController::class, 'uploadImage'])
+                ->middleware('throttle:30,1')
+                ->name('api.v1.agent.site.images');
+        });
+        Route::get('/leads', [\App\Http\Controllers\Api\V1\Agent\AgentSiteController::class, 'leads'])->name('api.v1.agent.leads.index');
+        Route::patch('/leads/{id}/read', [\App\Http\Controllers\Api\V1\Agent\AgentSiteController::class, 'markLeadRead'])->name('api.v1.agent.leads.read');
+        Route::delete('/leads/{id}', [\App\Http\Controllers\Api\V1\Agent\AgentSiteController::class, 'destroyLead'])->name('api.v1.agent.leads.destroy');
 
         // Agent Earnings
         Route::get('/earnings', [\App\Http\Controllers\Api\V1\Agent\AgentEarningsController::class, 'summary'])->name('api.v1.agent.earnings');

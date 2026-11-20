@@ -167,10 +167,10 @@ class ProfileSeoTest extends TestCase
             'display_name' => 'John Doe',
         ]);
 
-        // Exceed seo_title (max 70) and seo_description (max 160)
+        // Exceed seo_title (max 100) and seo_description (max 300) — UpdateProfileSeoRequest
         $response = $this->actingAs($user)->patchJson('/api/v1/profile/seo', [
-            'seo_title' => str_repeat('a', 71),
-            'seo_description' => str_repeat('b', 161),
+            'seo_title' => str_repeat('a', 101),
+            'seo_description' => str_repeat('b', 301),
             'og_title' => str_repeat('c', 96),
             'og_description' => str_repeat('d', 201),
             'seo_keywords' => array_fill(0, 11, 'tag'),

@@ -16,7 +16,8 @@ class InternalDomainResolutionController extends Controller
     use ApiResponse;
 
     public function __construct(
-        private readonly DomainService $domainService
+        private readonly DomainService $domainService,
+        private readonly \App\Services\AgentSiteService $agentSites,
     ) {
     }
 
@@ -42,11 +43,16 @@ class InternalDomainResolutionController extends Controller
         }
 
         $resolved = $this->domainService->resolveHost($host);
-
-        if (!$resolved) {
-            throw new NotFoundHttpException('No active custom domain profile found for this host.');
+        if ($resolved) {
+            return $this->successResponse(['type' => 'profile', ...$resolved]);
         }
 
-        return $this->successResponse($resolved);
+        // An agent's domain: landing page at "/", the agent's customers' cards at "/{username}".
+        $agentSite = $this->agentSites->resolveHost($host);
+        if ($agentSite) {
+            return $this->successResponse($agentSite);
+        }
+
+        throw new NotFoundHttpException('No active custom domain found for this host.');
     }
 }

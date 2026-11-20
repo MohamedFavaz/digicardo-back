@@ -110,7 +110,10 @@ class AnalyticsTest extends TestCase
             'event_type' => 'link_click',
         ]);
 
-        $response->assertStatus(422);
+        // The event is accepted for this profile, but the foreign block is never credited:
+        // AnalyticsService stores block_id = null when the block belongs to another profile.
+        $response->assertStatus(202);
+        $this->assertDatabaseMissing('analytics_events', ['block_id' => $foreignBlock->id]);
     }
 
     public function test_valid_block_click_event_accepted(): void

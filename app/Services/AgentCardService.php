@@ -128,13 +128,15 @@ class AgentCardService
 
             // 2. Resolve template and default theme
             $templateId = $data['template_id'] ?? 'botanical';
-            if (!in_array($templateId, ['botanical', 'vcard'], true)) {
+            if (!TemplateService::isApprovedId($templateId)) {
                 $templateId = 'botanical';
             }
-            $defaultTheme = $templateId === 'vcard'
-                ? TemplateService::APPROVED_TEMPLATES['vcard']['default_theme']
-                : TemplateService::APPROVED_TEMPLATES['botanical']['default_theme'];
-            $themeTokens = !empty($data['theme_tokens']) ? $data['theme_tokens'] : $defaultTheme;
+            $defaultTheme = TemplateService::APPROVED_TEMPLATES[$templateId]['default_theme'];
+            // Same cleaning as the owner's appearance editor: unsafe URLs, non-hex colours and
+            // unknown keys never reach the database (AGENTS.md rule 3).
+            $themeTokens = !empty($data['theme_tokens']) && is_array($data['theme_tokens'])
+                ? app(ThemeTokenSanitizer::class)->sanitize($data['theme_tokens'], $defaultTheme, $templateId)
+                : $defaultTheme;
 
             // Create profile (digital card)
             $profile = Profile::create([
@@ -144,6 +146,7 @@ class AgentCardService
                 'bio' => $data['bio'] ?? null,
                 'template_id' => $templateId,
                 'theme_tokens' => $themeTokens,
+                'content' => CardContentSchema::starter((string) ($data['display_name'] ?? $data['customer_name']), $data['bio'] ?? null),
                 'is_public' => true,
             ]);
 

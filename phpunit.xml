@@ -30,5 +30,9 @@
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
+        <env name="INTERNAL_SERVICE_SECRET" value="local-internal-service-secret"/>
+        <env name="NEXT_REVALIDATE_SECRET" value=""/>
+        <env name="FRONTEND_URL" value="http://localhost:3000"/>
+        <env name="ALLOW_PUBLIC_REGISTRATION" value="true"/>
     </php>
 </phpunit>

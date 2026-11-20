@@ -35,13 +35,9 @@ class Profile extends Model
         'avatar_url',
         'cover_url',
         'template_id',
-        'category',
-        'card_title',
-        'status',
-        'is_primary',
-        'published_at',
-        'published_url',
         'theme_tokens',
+        'content',
+        'theme_tokens_legacy',
         'is_public',
         'seo_title',
         'seo_description',
@@ -67,44 +63,15 @@ class Profile extends Model
     {
         return [
             'theme_tokens' => 'array',
+            'content' => 'array',
+            'theme_tokens_legacy' => 'array',
             'is_public' => 'boolean',
             'seo_keywords' => 'array',
             'indexable' => 'boolean',
             'version' => 'integer',
-            'category' => \App\Enums\CardCategory::class,
-            'status' => \App\Enums\CardStatus::class,
-            'is_primary' => 'boolean',
-            'published_at' => 'datetime',
             'moderation_status' => \App\Enums\ProfileModerationStatus::class,
             'moderated_at' => 'datetime',
         ];
-    }
-
-    /**
-     * Scope a query to only include primary cards.
-     */
-    public function scopePrimary($query)
-    {
-        return $query->where('is_primary', true);
-    }
-
-    /**
-     * Scope a query to only include published cards.
-     */
-    public function scopePublished($query)
-    {
-        return $query->where('status', \App\Enums\CardStatus::Published);
-    }
-
-    /**
-     * Scope a query to filter by category.
-     */
-    public function scopeCategory($query, $category)
-    {
-        if ($category instanceof \App\Enums\CardCategory) {
-            return $query->where('category', $category);
-        }
-        return $query->where('category', $category);
     }
 
     /**

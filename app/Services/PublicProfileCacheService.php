@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\RevalidatePublicProfile;
 use App\Models\Profile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -29,6 +30,9 @@ class PublicProfileCacheService
                 Cache::forget("domain:{$profileOrUsername->primaryDomain->normalized_domain}");
             }
         }
+
+        // 2. Rebuild the Next.js public page so the change is live within seconds.
+        RevalidatePublicProfile::dispatchAfterResponse($username);
 
         Log::info("Public profile cache invalidated for [{$username}].");
     }

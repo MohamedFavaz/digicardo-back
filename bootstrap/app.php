@@ -182,6 +182,27 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
+        // A missing table or column means migrations haven't been run on this database.
+        // Say so plainly (503, retrying won't help) instead of a generic 500.
+        $exceptions->render(function (\Illuminate\Database\QueryException $e, Request $request) {
+            $state = (string) ($e->errorInfo[0] ?? $e->getCode());
+            $missingSchema = in_array($state, ['42S22', '42S02'], true)
+                || str_contains($e->getMessage(), 'no such column')
+                || str_contains($e->getMessage(), 'no such table');
+
+            if ($missingSchema && ($request->is('api/*') || $request->wantsJson())) {
+                return response()->json([
+                    'success' => false,
+                    'error' => [
+                        'code' => 'DATABASE_OUTDATED',
+                        'message' => config('app.debug')
+                            ? 'The database needs updating. Run "php artisan migrate" in the backend folder, then try again.'
+                            : 'Saving is temporarily unavailable while the service is updated. Please try again later.',
+                    ],
+                ], Response::HTTP_SERVICE_UNAVAILABLE);
+            }
+        });
+
         $exceptions->render(function (ThrottleRequestsException|TooManyRequestsHttpException $e, Request $request) {
             if ($request->is('api/*') || $request->wantsJson()) {
                 return response()->json([

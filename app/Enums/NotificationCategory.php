@@ -10,4 +10,5 @@ enum NotificationCategory: string
     case Domain = 'domain';
     case System = 'system';
     case Marketing = 'marketing';
+    case Message = 'message';
 }

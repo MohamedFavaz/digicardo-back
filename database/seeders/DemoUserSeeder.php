@@ -16,7 +16,7 @@ class DemoUserSeeder extends Seeder
         // 1. Create Regular Demo User
         $user = User::where('email', 'demo@Digicardo.app')->first();
         if (!$user) {
-            $user = User::create([
+            $user = User::forceCreate([
                 'id' => (string) Str::ulid(),
                 'name' => 'Alex Rivers',
                 'email' => 'demo@Digicardo.app',
@@ -26,19 +26,19 @@ class DemoUserSeeder extends Seeder
                 'email_verified_at' => now(),
             ]);
         } else {
-            $user->update([
+            $user->forceFill([
                 'name' => 'Alex Rivers',
                 'password' => Hash::make('Password123!'),
                 'role' => 'user',
                 'status' => 'active',
                 'email_verified_at' => now(),
-            ]);
+            ])->save();
         }
 
         // 1b. Create Platform Administrator User
         $admin = User::where('email', 'admin@Digicardo.app')->first();
         if (!$admin) {
-            User::create([
+            User::forceCreate([
                 'id' => (string) Str::ulid(),
                 'name' => 'Digicardo Admin',
                 'email' => 'admin@Digicardo.app',
@@ -48,13 +48,13 @@ class DemoUserSeeder extends Seeder
                 'email_verified_at' => now(),
             ]);
         } else {
-            $admin->update([
+            $admin->forceFill([
                 'name' => 'Digicardo Admin',
                 'password' => Hash::make('AdminPass123!'),
                 'role' => 'admin',
                 'status' => 'active',
                 'email_verified_at' => now(),
-            ]);
+            ])->save();
         }
 
         // 2. Create Demo Profile

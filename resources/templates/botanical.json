@@ -1,0 +1,45 @@
+{
+  "id": "botanical",
+  "name": "Botanical",
+  "description": "A calm executive card with soft line art, a serif name, link cards and five colour palettes.",
+  "category": "Corporate",
+  "sections": ["links", "documents", "services", "products", "payments", "gallery", "review", "qr"],
+  "default_theme": {
+    "color_background": "#F2F5F1",
+    "color_surface": "#FFFFFF",
+    "color_text_primary": "#1B4332",
+    "color_text_secondary": "#2D6A4F",
+    "color_accent": "#2D6A4F",
+    "font_family": "inter",
+    "button_radius": "large",
+    "button_style": "solid",
+    "animation": "fade"
+  },
+  "controls": [
+    {
+      "key": "background",
+      "label": "Background art",
+      "type": "choice",
+      "default": "botanical",
+      "options": [
+        { "value": "botanical", "label": "Leaves" },
+        { "value": "topo", "label": "Contours" },
+        { "value": "geometric", "label": "Grid" },
+        { "value": "aura", "label": "Soft glow" },
+        { "value": "minimal", "label": "Plain" },
+        { "value": "marble", "label": "Marble" },
+        { "value": "tech", "label": "Dots" },
+        { "value": "frosted", "label": "Frosted" },
+        { "value": "silk", "label": "Waves" },
+        { "value": "bauhaus", "label": "Shapes" }
+      ]
+    }
+  ],
+  "presets": [
+    { "id": "sage", "name": "Sage", "tokens": { "color_background": "#F2F5F1", "color_surface": "#FFFFFF", "color_text_primary": "#1B4332", "color_text_secondary": "#2D6A4F", "color_accent": "#2D6A4F" } },
+    { "id": "navy", "name": "Navy", "tokens": { "color_background": "#F1F4F9", "color_surface": "#FFFFFF", "color_text_primary": "#0A192F", "color_text_secondary": "#1E3A8A", "color_accent": "#1E40AF" } },
+    { "id": "gold", "name": "Gold", "tokens": { "color_background": "#F8F5EE", "color_surface": "#FFFFFF", "color_text_primary": "#1C1917", "color_text_secondary": "#92400E", "color_accent": "#92400E" } },
+    { "id": "terracotta", "name": "Terracotta", "tokens": { "color_background": "#F9F3EF", "color_surface": "#FFFFFF", "color_text_primary": "#431407", "color_text_secondary": "#9A3412", "color_accent": "#C2410C" } },
+    { "id": "charcoal", "name": "Charcoal", "tokens": { "color_background": "#F4F4F5", "color_surface": "#FFFFFF", "color_text_primary": "#09090B", "color_text_secondary": "#52525B", "color_accent": "#27272A" } }
+  ]
+}

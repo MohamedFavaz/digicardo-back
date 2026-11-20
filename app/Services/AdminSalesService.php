@@ -47,10 +47,15 @@ class AdminSalesService
     {
         $start = now()->startOfMonth()->subMonths($months - 1);
 
+        // Works on MySQL and SQLite (tests, local previews).
+        [$yearExpr, $monthExpr] = DB::connection()->getDriverName() === 'sqlite'
+            ? ["CAST(strftime('%Y', sale_date) AS INTEGER)", "CAST(strftime('%m', sale_date) AS INTEGER)"]
+            : ['YEAR(sale_date)', 'MONTH(sale_date)'];
+
         $rows = AdminSale::where('sale_date', '>=', $start)
-            ->selectRaw('YEAR(sale_date) as y, MONTH(sale_date) as m, SUM(amount) as total, COUNT(*) as count')
-            ->groupByRaw('YEAR(sale_date), MONTH(sale_date)')
-            ->orderByRaw('YEAR(sale_date), MONTH(sale_date)')
+            ->selectRaw("{$yearExpr} as y, {$monthExpr} as m, SUM(amount) as total, COUNT(*) as count")
+            ->groupByRaw("{$yearExpr}, {$monthExpr}")
+            ->orderByRaw("{$yearExpr}, {$monthExpr}")
             ->get()
             ->keyBy(fn ($r) => "{$r->y}-{$r->m}");
 

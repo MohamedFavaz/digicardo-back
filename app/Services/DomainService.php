@@ -20,13 +20,30 @@ class DomainService
      * System-reserved domains that cannot be claimed as custom domains.
      */
     private const SYSTEM_DOMAINS = [
-        'Digicardo.app',
-        'www.Digicardo.app',
-        'app.Digicardo.app',
-        'api.Digicardo.app',
+        // Lowercase: compared against normalized (lowercased) input. Subdomains
+        // (www., app., api., …) are blocked by the suffix check.
+        'digicardo.app',
+        'digicardo.in',
         'localhost',
         '127.0.0.1',
     ];
+
+    /**
+     * Reserved domains, including the host of the configured frontend URL.
+     *
+     * @return list<string>
+     */
+    private function systemDomains(): array
+    {
+        $domains = self::SYSTEM_DOMAINS;
+
+        $frontendHost = parse_url((string) config('app.frontend_url', ''), PHP_URL_HOST);
+        if (is_string($frontendHost) && $frontendHost !== '') {
+            $domains[] = strtolower($frontendHost);
+        }
+
+        return array_values(array_unique($domains));
+    }
 
     public function __construct(
         private readonly DnsVerificationServiceInterface $dnsVerifier,
@@ -115,7 +132,7 @@ class DomainService
         }
 
         // 8. Reject Digicardo system domains
-        foreach (self::SYSTEM_DOMAINS as $sysDomain) {
+        foreach ($this->systemDomains() as $sysDomain) {
             if ($domain === $sysDomain || str_ends_with($domain, '.' . $sysDomain)) {
                 throw ValidationException::withMessages([
                     'domain' => ['System domain cannot be registered as a custom domain.'],
@@ -392,7 +409,7 @@ class DomainService
         $normalized = $this->normalizeDomain($host);
 
         // Disallow system domains from custom domain lookup
-        foreach (self::SYSTEM_DOMAINS as $sysDomain) {
+        foreach ($this->systemDomains() as $sysDomain) {
             if ($normalized === $sysDomain || str_ends_with($normalized, '.' . $sysDomain)) {
                 return null;
             }

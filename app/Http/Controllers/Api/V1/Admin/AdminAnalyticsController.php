@@ -21,9 +21,14 @@ class AdminAnalyticsController extends Controller
     {
         $months = min(24, max(1, (int) $request->query('months', 8)));
 
+        // Works on MySQL and SQLite (tests, local previews).
+        $monthExpr = DB::connection()->getDriverName() === 'sqlite'
+            ? "strftime('%Y-%m', created_at)"
+            : "DATE_FORMAT(created_at, '%Y-%m')";
+
         $rows = User::query()
             ->select(
-                DB::raw("DATE_FORMAT(created_at, '%Y-%m') as month"),
+                DB::raw("{$monthExpr} as month"),
                 DB::raw('COUNT(*) as count')
             )
             ->where('created_at', '>=', now()->subMonths($months)->startOfMonth())

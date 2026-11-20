@@ -47,6 +47,21 @@ class EntitlementsTest extends TestCase
             ->assertJsonPath('error.code', 'UNAUTHENTICATED');
     }
 
+    /**
+     * PLATFORM POLICY (FeatureEntitlementService, commit 33cedc0): every feature is
+     * unlocked for every user and no limits apply. Plans are still resolved so billing
+     * screens show the right plan, and usage is still counted for display.
+     */
+    private function assertEverythingUnlocked(\Illuminate\Testing\TestResponse $response): void
+    {
+        foreach (['gallery_blocks', 'video_blocks', 'music_blocks', 'booking_blocks', 'advanced_templates', 'remove_branding'] as $feature) {
+            $response->assertJsonPath("data.features.{$feature}", true);
+        }
+        foreach (['profile_count', 'custom_domain_count', 'analytics_history_days'] as $limit) {
+            $response->assertJsonPath("data.limits.{$limit}", null);
+        }
+    }
+
     public function test_new_user_without_paid_subscription_resolves_to_free_plan(): void
     {
         $user = User::factory()->create();
@@ -61,16 +76,8 @@ class EntitlementsTest extends TestCase
 
         $entitlementsRes->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.plan.code', 'free')
-            ->assertJsonPath('data.limits.profile_count', 1)
-            ->assertJsonPath('data.limits.custom_domain_count', 0)
-            ->assertJsonPath('data.limits.analytics_history_days', 7)
-            ->assertJsonPath('data.features.gallery_blocks', false)
-            ->assertJsonPath('data.features.video_blocks', false)
-            ->assertJsonPath('data.features.music_blocks', false)
-            ->assertJsonPath('data.features.booking_blocks', false)
-            ->assertJsonPath('data.features.advanced_templates', false)
-            ->assertJsonPath('data.features.remove_branding', false);
+            ->assertJsonPath('data.plan.code', 'free');
+        $this->assertEverythingUnlocked($entitlementsRes);
     }
 
     public function test_user_with_active_pro_subscription_receives_pro_entitlements(): void
@@ -94,16 +101,8 @@ class EntitlementsTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.plan.code', 'pro')
-            ->assertJsonPath('data.limits.profile_count', 3)
-            ->assertJsonPath('data.limits.custom_domain_count', 1)
-            ->assertJsonPath('data.limits.analytics_history_days', 90)
-            ->assertJsonPath('data.features.gallery_blocks', true)
-            ->assertJsonPath('data.features.video_blocks', true)
-            ->assertJsonPath('data.features.music_blocks', true)
-            ->assertJsonPath('data.features.booking_blocks', true)
-            ->assertJsonPath('data.features.advanced_templates', true)
-            ->assertJsonPath('data.features.remove_branding', true);
+            ->assertJsonPath('data.plan.code', 'pro');
+        $this->assertEverythingUnlocked($response);
     }
 
     public function test_canceled_expired_subscription_falls_back_to_free_plan(): void
@@ -124,15 +123,14 @@ class EntitlementsTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.plan.code', 'free')
-            ->assertJsonPath('data.limits.profile_count', 1)
-            ->assertJsonPath('data.features.gallery_blocks', false);
+            ->assertJsonPath('data.plan.code', 'free');
+        $this->assertEverythingUnlocked($response);
     }
 
-    public function test_usage_and_remaining_are_accurately_computed(): void
+    public function test_usage_is_counted_and_remaining_is_unlimited(): void
     {
         $user = User::factory()->create();
-        $profile = Profile::create([
+        Profile::create([
             'user_id' => $user->id,
             'username' => 'usertest1',
             'display_name' => 'User Test',
@@ -145,8 +143,8 @@ class EntitlementsTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonPath('data.usage.profile_count', 1)
-            ->assertJsonPath('data.remaining.profile_count', 0)
+            ->assertJsonPath('data.remaining.profile_count', null)
             ->assertJsonPath('data.usage.custom_domain_count', 0)
-            ->assertJsonPath('data.remaining.custom_domain_count', 0);
+            ->assertJsonPath('data.remaining.custom_domain_count', null);
     }
 }
