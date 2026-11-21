@@ -1,10 +1,19 @@
+# The hosting document root is the project folder, so only public/ may ever be served.
+Options -Indexes -MultiViews
+
+# Never serve dotfiles (.env, .git, .htaccess …), backups, dumps, logs or project files.
+<FilesMatch "(^\.|\.(env|bak|sql|gz|zip|tar|log|sqlite|ini|sh|md|lock|xml|yml|yaml|dist|example)$|^(artisan|composer\.json|package\.json)$)">
+    Require all denied
+</FilesMatch>
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Prevent direct browsing of sensitive files like .env or git
-    RewriteRule ^(\.env|\.git|composer\.(json|lock)|package\.json) - [F,L]
+    # Folders of the app outside public/ are refused outright. (/storage/… is NOT listed: uploaded
+    # photos are served from public/storage, which links to storage/app/public only.)
+    RewriteRule ^(app|bootstrap|config|database|resources|routes|tests|vendor|\.git)(/|$) - [F,L]
 
-    # Rewrite all requests to the public directory
+    # Everything else goes to the public directory (the Laravel front controller lives there).
     RewriteCond %{REQUEST_URI} !^/public/
     RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>

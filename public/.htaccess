@@ -19,3 +19,18 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Security headers for every API response.
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    Header always unset X-Powered-By
+    Header unset X-Powered-By
+</IfModule>
+
+# Uploaded files are data, never code: nothing under storage/ may run as a script.
+<IfModule mod_rewrite.c>
+    RewriteRule ^storage/.*\.(php[0-9]?|phtml|phar|pl|py|cgi|sh)$ - [F,L,NC]
+</IfModule>
