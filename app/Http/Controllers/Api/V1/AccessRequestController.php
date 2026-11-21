@@ -41,6 +41,29 @@ class AccessRequestController extends Controller
         }
 
         $email = strtolower(trim($validated['email']));
+
+        // An email that already has an account (card owner, agent or admin) can't request another one.
+        if (\App\Models\User::withTrashed()->whereRaw('LOWER(email) = ?', [$email])->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'email' => 'This email already has a Digicardo account. Please sign in instead, or use a different email.',
+            ]);
+        }
+
+        // The desired card address must be free and usable.
+        if ($handle) {
+            $cleanHandle = \App\Services\UsernameService::normalize(ltrim($handle, '@'));
+            if (! \App\Services\UsernameService::isValidFormat($cleanHandle)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'desired_username' => 'Use 3–30 lowercase letters, numbers, hyphens or underscores for the handle.',
+                ]);
+            }
+            if (\App\Services\UsernameService::isReserved($cleanHandle) || \App\Models\Profile::where('username', $cleanHandle)->exists()) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'desired_username' => "The handle @{$cleanHandle} is already taken. Please choose another.",
+                ]);
+            }
+        }
+
         $existing = AccessRequest::where('email', $email)->first();
 
         if ($existing) {
