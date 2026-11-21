@@ -632,6 +632,8 @@ class AdminUserService
 
         $request = request();
 
+        // A request still running on the old session must not bring it back after the switch.
+        \App\Http\Middleware\IgnoreRetiredSession::retire($request->hasSession() ? $request->session()->getId() : null);
         // 4. Log in target user into web session
         \Illuminate\Support\Facades\Auth::guard('web')->login($targetUser);
 
@@ -719,6 +721,8 @@ class AdminUserService
                 'impersonated_at',
             ]);
 
+            // A request still running on the old session must not bring it back after the switch.
+            \App\Http\Middleware\IgnoreRetiredSession::retire($request->hasSession() ? $request->session()->getId() : null);
             // Restore agent session
             \Illuminate\Support\Facades\Auth::guard('web')->login($agent);
             $request->session()->regenerate();
@@ -798,6 +802,8 @@ class AdminUserService
                 'impersonated_at',
             ]);
 
+            // A request still running on the old session must not bring it back after the switch.
+            \App\Http\Middleware\IgnoreRetiredSession::retire($request->hasSession() ? $request->session()->getId() : null);
             // Restore admin session
             \Illuminate\Support\Facades\Auth::guard('web')->login($admin);
             $request->session()->regenerate();

@@ -32,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->appendToGroup('api', [
             \App\Http\Middleware\AssignRequestId::class,
+            \App\Http\Middleware\IgnoreRetiredSession::class,
         ]);
 
         $middleware->alias([

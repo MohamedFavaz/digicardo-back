@@ -389,6 +389,8 @@ class AgentCardService
 
         $request = request();
 
+        // A request still running on the old session must not bring it back after the switch.
+        \App\Http\Middleware\IgnoreRetiredSession::retire($request->hasSession() ? $request->session()->getId() : null);
         // 5. Log target user into web session
         \Illuminate\Support\Facades\Auth::guard('web')->login($targetUser);
 
